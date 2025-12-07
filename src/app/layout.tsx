@@ -16,9 +16,54 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Online School - Class 10 Notes, Sample Papers, PYQs | CBSE Board 2025",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"),
+  title: {
+    default: "Online School - Class 10 Notes, Sample Papers, PYQs | CBSE Board 2025",
+    template: "%s | Online School",
+  },
   description: "India's fastest notes library for Class 10 students. Access high-quality notes, sample papers, PYQs, practice tests, and study materials for CBSE Board Exams 2025. Science, Maths, SST, English, Hindi.",
-  keywords: "class 10 notes, class 10 science notes, class 10 maths notes, CBSE sample papers 2025, class 10 PYQs, board exam preparation, class 10 important questions",
+  keywords: [
+    "class 10 notes",
+    "class 10 science notes",
+    "class 10 maths notes",
+    "CBSE sample papers 2025",
+    "class 10 PYQs",
+    "board exam preparation",
+    "class 10 important questions",
+    "CBSE board exam",
+    "class 10 study material",
+    "free notes class 10",
+  ],
+  authors: [{ name: "Online School" }],
+  creator: "Online School",
+  publisher: "Online School",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: "Online School",
+    title: "Online School - Class 10 Notes, Sample Papers, PYQs | CBSE Board 2025",
+    description: "India's fastest notes library for Class 10 students. Access high-quality notes, sample papers, PYQs, practice tests, and study materials for CBSE Board Exams 2025.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Online School - Class 10 Notes, Sample Papers, PYQs | CBSE Board 2025",
+    description: "India's fastest notes library for Class 10 students. Access high-quality notes, sample papers, PYQs, practice tests, and study materials for CBSE Board Exams 2025.",
+  },
+  verification: {
+    google: "google-site-verification-code",
+  },
+  category: "education",
 };
 
 export default function RootLayout({
