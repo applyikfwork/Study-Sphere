@@ -150,6 +150,14 @@ CREATE TABLE IF NOT EXISTS public.notes (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add is_published column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notes' AND column_name = 'is_published') THEN
+    ALTER TABLE public.notes ADD COLUMN is_published BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can view notes" ON public.notes;
@@ -199,6 +207,14 @@ CREATE TABLE IF NOT EXISTS public.sample_papers (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add is_published column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sample_papers' AND column_name = 'is_published') THEN
+    ALTER TABLE public.sample_papers ADD COLUMN is_published BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
 ALTER TABLE public.sample_papers ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can view sample papers" ON public.sample_papers;
@@ -246,6 +262,14 @@ CREATE TABLE IF NOT EXISTS public.pyqs (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add is_published column if it doesn't exist (for existing tables)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pyqs' AND column_name = 'is_published') THEN
+    ALTER TABLE public.pyqs ADD COLUMN is_published BOOLEAN DEFAULT true;
+  END IF;
+END $$;
 
 ALTER TABLE public.pyqs ENABLE ROW LEVEL SECURITY;
 
