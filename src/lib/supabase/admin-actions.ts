@@ -78,8 +78,7 @@ export async function uploadContent(formData: FormData) {
           file_url: fileUrl,
           file_name: file.name,
           file_size: file.size,
-          note_type: contentType,
-          created_by: userId
+          note_type: contentType
         })
       
       dbError = error
@@ -96,8 +95,7 @@ export async function uploadContent(formData: FormData) {
           year: parseInt(year),
           file_url: fileUrl,
           file_name: file.name,
-          file_size: file.size,
-          created_by: userId
+          file_size: file.size
         })
       
       dbError = error
@@ -114,8 +112,7 @@ export async function uploadContent(formData: FormData) {
           year: parseInt(year),
           file_url: fileUrl,
           file_name: file.name,
-          file_size: file.size,
-          created_by: userId
+          file_size: file.size
         })
       
       dbError = error
@@ -126,15 +123,19 @@ export async function uploadContent(formData: FormData) {
       return { success: false, error: dbError.message }
     }
 
-    await supabase
-      .from('admin_activity')
-      .insert({
-        admin_id: userId,
-        action: 'upload',
-        entity_type: contentType,
-        entity_title: title,
-        details: { file_name: file.name, file_size: file.size }
-      })
+    try {
+      await supabase
+        .from('admin_activity')
+        .insert({
+          admin_id: userId,
+          action: 'upload',
+          entity_type: contentType,
+          entity_title: title,
+          details: { file_name: file.name, file_size: file.size }
+        })
+    } catch {
+      // Ignore admin activity logging errors
+    }
 
     revalidatePath('/admin')
     revalidatePath('/admin/content')
@@ -181,16 +182,20 @@ export async function deleteContent(contentType: string, id: string) {
       return { success: false, error: error.message }
     }
 
-    await supabase
-      .from('admin_activity')
-      .insert({
-        admin_id: userId,
-        action: 'delete',
-        entity_type: contentType,
-        entity_id: id,
-        entity_title: existing?.title,
-        details: { file_url: existing?.file_url }
-      })
+    try {
+      await supabase
+        .from('admin_activity')
+        .insert({
+          admin_id: userId,
+          action: 'delete',
+          entity_type: contentType,
+          entity_id: id,
+          entity_title: existing?.title,
+          details: { file_url: existing?.file_url }
+        })
+    } catch {
+      // Ignore admin activity logging errors
+    }
 
     revalidatePath('/admin')
     revalidatePath('/admin/content')
@@ -231,15 +236,19 @@ export async function updateContent(contentType: string, id: string, data: Recor
       return { success: false, error: error.message }
     }
 
-    await supabase
-      .from('admin_activity')
-      .insert({
-        admin_id: userId,
-        action: 'update',
-        entity_type: contentType,
-        entity_id: id,
-        details: data
-      })
+    try {
+      await supabase
+        .from('admin_activity')
+        .insert({
+          admin_id: userId,
+          action: 'update',
+          entity_type: contentType,
+          entity_id: id,
+          details: data
+        })
+    } catch {
+      // Ignore admin activity logging errors
+    }
 
     revalidatePath('/admin')
     revalidatePath('/admin/content')
@@ -275,16 +284,20 @@ export async function updateUserRole(userId: string, newRole: 'student' | 'admin
       return { success: false, error: error.message }
     }
 
-    await supabase
-      .from('admin_activity')
-      .insert({
-        admin_id: adminId,
-        action: 'role_change',
-        entity_type: 'user',
-        entity_id: userId,
-        entity_title: targetUser?.email,
-        details: { new_role: newRole, full_name: targetUser?.full_name }
-      })
+    try {
+      await supabase
+        .from('admin_activity')
+        .insert({
+          admin_id: adminId,
+          action: 'role_change',
+          entity_type: 'user',
+          entity_id: userId,
+          entity_title: targetUser?.email,
+          details: { new_role: newRole, full_name: targetUser?.full_name }
+        })
+    } catch {
+      // Ignore admin activity logging errors
+    }
 
     revalidatePath('/admin/users')
     
@@ -319,16 +332,20 @@ export async function toggleUserStatus(userId: string, isActive: boolean) {
       return { success: false, error: error.message }
     }
 
-    await supabase
-      .from('admin_activity')
-      .insert({
-        admin_id: adminId,
-        action: isActive ? 'activate_user' : 'deactivate_user',
-        entity_type: 'user',
-        entity_id: userId,
-        entity_title: targetUser?.email,
-        details: { full_name: targetUser?.full_name }
-      })
+    try {
+      await supabase
+        .from('admin_activity')
+        .insert({
+          admin_id: adminId,
+          action: isActive ? 'activate_user' : 'deactivate_user',
+          entity_type: 'user',
+          entity_id: userId,
+          entity_title: targetUser?.email,
+          details: { full_name: targetUser?.full_name }
+        })
+    } catch {
+      // Ignore admin activity logging errors
+    }
 
     revalidatePath('/admin/users')
     
