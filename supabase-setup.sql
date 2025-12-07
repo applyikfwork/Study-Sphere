@@ -367,7 +367,7 @@ WHERE email = 'xyzapplywork@gmail.com';
 -- STEP 14: VERIFY ADMIN STATUS (Optional check)
 -- =====================================================
 
-SELECT id, email, full_name, role 
+SELECT id, email, full_name, role
 FROM public.profiles 
 WHERE email = 'xyzapplywork@gmail.com';
 
