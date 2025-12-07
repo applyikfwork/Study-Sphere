@@ -155,7 +155,15 @@ The root layout includes comprehensive SEO metadata:
 - Admin activity is logged for audit purposes
 - Storage policies use authenticated role (not is_admin) to avoid recursion
 
+## Legal Pages
+- **Privacy Policy**: /privacy - Comprehensive privacy policy covering data collection, cookies, third-party services
+- **Terms & Conditions**: /terms - Terms of service covering educational use, content policy, disclaimers
+- **Terms Acceptance**: Users must accept Privacy Policy and Terms before signing up or logging in
+
 ## Recent Changes
+- **Dec 2024**: Added Privacy Policy page at /privacy
+- **Dec 2024**: Added Terms & Conditions page at /terms
+- **Dec 2024**: Added terms acceptance checkbox to signup and login pages
 - **Dec 2024**: Fixed upload content errors by creating supabase-add-columns.sql migration script
 - **Dec 2024**: Improved error handling in admin-actions.ts with detailed error messages
 - **Dec 2024**: Added helpful error tips in upload page for schema and storage issues
