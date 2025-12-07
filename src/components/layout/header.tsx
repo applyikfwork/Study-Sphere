@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ export function Header() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +46,19 @@ export function Header() {
       setLoading(false);
     });
 
+    const fetchLogo = async () => {
+      try {
+        const response = await fetch("/api/settings/logo");
+        const data = await response.json();
+        if (data.logoUrl) {
+          setLogoUrl(data.logoUrl);
+        }
+      } catch (err) {
+        console.error("Error fetching logo:", err);
+      }
+    };
+    fetchLogo();
+
     return () => {
       subscription.unsubscribe();
     };
@@ -65,10 +80,23 @@ export function Header() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8">
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Online School
-            </span>
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt="Online School"
+                width={150}
+                height={40}
+                className="h-10 w-auto object-contain"
+                unoptimized
+              />
+            ) : (
+              <>
+                <GraduationCap className="h-8 w-8 text-primary" />
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Online School
+                </span>
+              </>
+            )}
           </Link>
         </div>
         
@@ -172,8 +200,21 @@ export function Header() {
           <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
             <div className="flex items-center justify-between">
               <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-                <GraduationCap className="h-8 w-8 text-primary" />
-                <span className="text-xl font-bold">Online School</span>
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="Online School"
+                    width={120}
+                    height={32}
+                    className="h-8 w-auto object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <>
+                    <GraduationCap className="h-8 w-8 text-primary" />
+                    <span className="text-xl font-bold">Online School</span>
+                  </>
+                )}
               </Link>
               <button
                 type="button"

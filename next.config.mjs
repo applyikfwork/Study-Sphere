@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   allowedDevOrigins: ['*.replit.dev', '*.worf.replit.dev', '*.kirk.replit.dev', '*.pike.replit.dev'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/**',
+      },
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb'
