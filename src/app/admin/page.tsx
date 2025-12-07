@@ -21,6 +21,18 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const isAdmin = profile?.role === 'admin' || user.email === 'xyzapplywork@gmail.com';
+
+  if (!isAdmin) {
+    redirect("/profile");
+  }
+
   const stats = [
     { label: "Total Students", value: "10,245", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Total Notes", value: "523", icon: FileText, color: "text-green-600", bg: "bg-green-50" },
