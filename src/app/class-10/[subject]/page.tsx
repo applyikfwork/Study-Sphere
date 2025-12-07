@@ -185,7 +185,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
   const jsonLd = generateSubjectJsonLd(
     subjectData.name, 
     subjectSlug, 
-    subjectData.chapters.map(ch => ({ chapter_number: ch.chapter_number, title: ch.title }))
+    subjectData.chapters.map((ch: { chapter_number: number; title: string }) => ({ chapter_number: ch.chapter_number, title: ch.title }))
   );
 
   return (

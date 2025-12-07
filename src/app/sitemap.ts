@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://onlineschool.com'
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://class10thpdf.vercel.app'
 
 const subjects = [
   { slug: 'science', name: 'Science', chapters: 15 },
