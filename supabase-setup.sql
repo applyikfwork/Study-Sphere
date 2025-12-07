@@ -33,33 +33,44 @@ DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Allow all authenticated to view profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Allow users to insert their own profile" ON public.profiles;
 
--- Create policies for profiles
-CREATE POLICY "Users can view their own profile" 
+-- Create a security definer function to check admin status (avoids recursion)
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+  user_role TEXT;
+BEGIN
+  SELECT role INTO user_role FROM public.profiles WHERE id = user_id;
+  RETURN user_role = 'admin';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Simple policies for profiles that avoid recursion
+-- Allow all authenticated users to view all profiles (needed for admin checks)
+CREATE POLICY "Allow all authenticated to view profiles" 
   ON public.profiles FOR SELECT 
-  USING (auth.uid() = id);
+  TO authenticated
+  USING (true);
 
+-- Users can update their own profile
 CREATE POLICY "Users can update their own profile" 
   ON public.profiles FOR UPDATE 
+  TO authenticated
   USING (auth.uid() = id);
 
-CREATE POLICY "Admins can view all profiles" 
-  ON public.profiles FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
-
+-- Admins can update any profile (using security definer function)
 CREATE POLICY "Admins can update all profiles" 
   ON public.profiles FOR UPDATE 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  TO authenticated
+  USING (public.is_admin(auth.uid()));
+
+-- Allow users to insert their own profile
+CREATE POLICY "Allow users to insert their own profile"
+  ON public.profiles FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = id);
 
 -- =====================================================
 -- STEP 2: CREATE SUBJECTS TABLE
@@ -89,12 +100,7 @@ CREATE POLICY "Anyone can view subjects"
 
 CREATE POLICY "Admins can manage subjects" 
   ON public.subjects FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 3: CREATE CHAPTERS TABLE
@@ -123,12 +129,7 @@ CREATE POLICY "Anyone can view chapters"
 
 CREATE POLICY "Admins can manage chapters" 
   ON public.chapters FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 4: CREATE NOTES TABLE
@@ -170,21 +171,11 @@ CREATE POLICY "Anyone can view published notes"
 
 CREATE POLICY "Admins can view all notes" 
   ON public.notes FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 CREATE POLICY "Admins can manage notes" 
   ON public.notes FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 5: CREATE SAMPLE PAPERS TABLE
@@ -227,21 +218,11 @@ CREATE POLICY "Anyone can view published sample papers"
 
 CREATE POLICY "Admins can view all sample papers" 
   ON public.sample_papers FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 CREATE POLICY "Admins can manage sample papers" 
   ON public.sample_papers FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 6: CREATE PYQs (Previous Year Questions) TABLE
@@ -283,21 +264,11 @@ CREATE POLICY "Anyone can view published pyqs"
 
 CREATE POLICY "Admins can view all pyqs" 
   ON public.pyqs FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 CREATE POLICY "Admins can manage pyqs" 
   ON public.pyqs FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 7: CREATE SAVED NOTES TABLE (for bookmarks)
@@ -360,12 +331,7 @@ CREATE POLICY "Users can log activity"
 
 CREATE POLICY "Admins can view all activity" 
   ON public.user_activity FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 9: CREATE ADMIN ACTIVITY LOG TABLE
@@ -386,21 +352,11 @@ ALTER TABLE public.admin_activity ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can view admin activity" 
   ON public.admin_activity FOR SELECT 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 CREATE POLICY "Admins can log activity" 
   ON public.admin_activity FOR INSERT 
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  WITH CHECK (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 10: CREATE SITE SETTINGS TABLE
@@ -423,12 +379,7 @@ CREATE POLICY "Anyone can view site settings"
 
 CREATE POLICY "Admins can manage site settings" 
   ON public.site_settings FOR ALL 
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+  USING (public.is_admin(auth.uid()));
 
 -- =====================================================
 -- STEP 11: CREATE FUNCTION TO AUTO-CREATE PROFILE ON SIGNUP
@@ -926,10 +877,7 @@ CREATE POLICY "Admin Upload to site-assets"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'site-assets' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
 
 -- Allow admin update to site-assets
@@ -937,10 +885,7 @@ CREATE POLICY "Admin Update site-assets"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'site-assets' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
 
 -- Allow admin delete from site-assets
@@ -948,10 +893,7 @@ CREATE POLICY "Admin Delete from site-assets"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'site-assets' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
 
 -- For content-files bucket:
@@ -966,10 +908,7 @@ CREATE POLICY "Admin Upload to content-files"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'content-files' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
 
 -- Allow admin update to content-files
@@ -977,10 +916,7 @@ CREATE POLICY "Admin Update content-files"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'content-files' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
 
 -- Allow admin delete from content-files
@@ -988,8 +924,5 @@ CREATE POLICY "Admin Delete from content-files"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'content-files' AND
-  EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin(auth.uid())
 );
