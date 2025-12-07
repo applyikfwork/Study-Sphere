@@ -62,7 +62,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-12">
         <div className="grid gap-4">
-          {subject.chapters.map((chapter, index) => (
+          {subject.chapters.map((chapter) => (
             <Link key={chapter.id} href={`/class-10/${subjectId}/chapter-${chapter.id}`}>
               <Card className="card-hover border-0 shadow-md">
                 <CardContent className="p-6">

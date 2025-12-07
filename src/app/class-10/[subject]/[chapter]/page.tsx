@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { subjects } from "@/lib/data";
-import { FileText, HelpCircle, BookOpen, CheckSquare, Download, ArrowLeft, Brain, Calculator } from "lucide-react";
+import { FileText, HelpCircle, BookOpen, CheckSquare, Download, ArrowLeft, Brain } from "lucide-react";
 
 interface ChapterPageProps {
   params: Promise<{ subject: string; chapter: string }>;
