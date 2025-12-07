@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Mail, Lock, Eye, EyeOff, CheckSquare, Square } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,6 +20,12 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!acceptTerms) {
+      setError("Please accept the Privacy Policy and Terms & Conditions to continue.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const supabase = createClient();
@@ -104,9 +111,39 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setAcceptTerms(!acceptTerms)}
+                className="flex items-start gap-3 w-full text-left p-3 rounded-lg border border-gray-200 hover:border-primary transition-colors"
+              >
+                {acceptTerms ? (
+                  <CheckSquare className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                ) : (
+                  <Square className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                )}
+                <span className="text-sm text-gray-600">
+                  I agree to the{" "}
+                  <Link href="/privacy" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                    Privacy Policy
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/terms" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                    Terms & Conditions
+                  </Link>
+                </span>
+              </button>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading || !acceptTerms}>
               {loading ? "Signing in..." : "Sign In"}
             </Button>
+
+            {!acceptTerms && (
+              <p className="text-xs text-center text-gray-500">
+                Please accept the terms to sign in
+              </p>
+            )}
           </form>
 
           <div className="mt-6 text-center text-sm">
