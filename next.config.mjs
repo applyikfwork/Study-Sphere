@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ['*.replit.dev', '*.worf.replit.dev', '*.kirk.replit.dev'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb'
