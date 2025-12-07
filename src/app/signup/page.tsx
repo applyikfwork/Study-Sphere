@@ -26,6 +26,11 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
+      if (!supabase) {
+        setError("Authentication service is not configured. Please try again later.");
+        return;
+      }
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,

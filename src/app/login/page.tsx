@@ -24,6 +24,11 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
+      if (!supabase) {
+        setError("Authentication service is not configured. Please try again later.");
+        return;
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -32,8 +37,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/profile");
-        router.refresh();
+        window.location.href = "/profile";
       }
     } catch {
       setError("An error occurred. Please try again.");
