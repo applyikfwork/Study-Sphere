@@ -156,8 +156,26 @@ The root layout includes comprehensive SEO metadata:
 - Storage policies use authenticated role (not is_admin) to avoid recursion
 
 ## Recent Changes
+- **Dec 2024**: Fixed upload content errors by creating supabase-add-columns.sql migration script
+- **Dec 2024**: Improved error handling in admin-actions.ts with detailed error messages
+- **Dec 2024**: Added helpful error tips in upload page for schema and storage issues
 - **Dec 2024**: Fixed infinite recursion in storage policies
 - **Dec 2024**: Updated public pages to fetch from Supabase instead of mock data
 - **Dec 2024**: Added graceful handling for missing Supabase configuration
 - **Dec 2024**: Created public-data.ts for server-side data fetching
 - **Dec 2024**: Initial project setup with full feature implementation
+
+## Troubleshooting
+
+### Error: "Could not find the 'file_name' column of 'notes' in the schema cache"
+This means your Supabase database tables are missing required columns. To fix:
+1. Go to Supabase Dashboard > SQL Editor
+2. Run the SQL in `supabase-add-columns.sql`
+3. Go to Project Settings > API > Click "Reload Schema"
+4. Try uploading again
+
+### Error: "Storage bucket 'content-files' not found"
+1. Go to Supabase Dashboard > Storage
+2. Create a new bucket named `content-files`
+3. Make it public by checking "Public bucket"
+4. Try uploading again

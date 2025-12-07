@@ -101,14 +101,20 @@ export default function UploadPage() {
       return;
     }
 
-    if (!subjectId) {
-      setError("Please select a subject");
-      return;
-    }
-
-    if (needsChapter && !chapterId) {
-      setError("Please select a chapter");
-      return;
+    if (needsChapter) {
+      if (!subjectId) {
+        setError("Please select a subject to load chapters");
+        return;
+      }
+      if (!chapterId) {
+        setError("Please select a chapter");
+        return;
+      }
+    } else {
+      if (!subjectId) {
+        setError("Please select a subject");
+        return;
+      }
     }
 
     setUploading(true);
@@ -197,9 +203,24 @@ export default function UploadPage() {
             </CardHeader>
             <CardContent>
               {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Upload Error</p>
+                      <p className="text-sm mt-1">{error}</p>
+                      {error.includes('schema') && (
+                        <p className="text-xs mt-2 text-red-600">
+                          Tip: Go to Supabase Dashboard &gt; SQL Editor and run the supabase-add-columns.sql script, then reload schema in Project Settings &gt; API.
+                        </p>
+                      )}
+                      {error.includes('bucket') && (
+                        <p className="text-xs mt-2 text-red-600">
+                          Tip: Go to Supabase Dashboard &gt; Storage and create a new public bucket named &quot;content-files&quot;.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
