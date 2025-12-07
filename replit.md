@@ -50,13 +50,14 @@ src/
 │   │   └── exam-section.tsx
 │   └── ui/                   # Shadcn UI components
 ├── lib/
-│   ├── data.ts               # Static data (subjects, chapters)
+│   ├── data.ts               # Static data reference (legacy)
 │   ├── utils.ts              # Utility functions
 │   └── supabase/
 │       ├── client.ts         # Browser Supabase client
 │       ├── server.ts         # Server Supabase client
 │       ├── middleware.ts     # Supabase middleware helper
 │       ├── realtime.ts       # Real-time hooks for live data
+│       ├── public-data.ts    # Server actions for fetching public content
 │       └── admin-actions.ts  # Server actions for admin operations
 └── middleware.ts             # Next.js middleware
 ```
@@ -65,9 +66,9 @@ src/
 
 ### Student Features
 1. **Homepage**: Hero section, features showcase, subject cards
-2. **Subject Pages**: All 5 subjects with chapter listings
-3. **Chapter Detail**: Resources display with notes, important questions, MCQs
-4. **Sample Papers**: Year-wise organization
+2. **Subject Pages**: All 5 subjects with chapter listings from database
+3. **Chapter Detail**: Resources display with downloadable notes, important questions, MCQs
+4. **Sample Papers**: Year-wise organization with download links
 5. **PYQs**: Previous year questions by subject and year
 6. **Authentication**: Login, signup with Supabase Auth
 7. **User Profile**: Saved content and study progress
@@ -79,52 +80,64 @@ src/
 4. **User Management**: View users, change roles (admin/student), activate/deactivate
 5. **Site Settings**: Logo upload and site configuration
 
-## Supabase Setup
+## IMPORTANT: Supabase Setup
 
-### Required SQL Commands
+### Step 1: Environment Variables
+Add these secrets in Replit (Secrets tab):
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL (e.g., https://xxxx.supabase.co)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous (public) key
+
+### Step 2: Run SQL Setup
 Run the commands in `supabase-setup.sql` in your Supabase SQL Editor:
 1. Creates all database tables (profiles, subjects, chapters, notes, sample_papers, pyqs, etc.)
 2. Sets up Row Level Security (RLS) policies
 3. Creates helper functions (get_admin_stats, get_recent_uploads, get_most_viewed)
 4. Enables real-time for all tables
 5. Inserts default subject and chapter data
-6. Storage bucket policies for site-assets and content-files
 
-### Storage Buckets (Create in Dashboard)
-1. **site-assets** (Public) - For logos and site assets
-2. **content-files** (Public) - For notes, sample papers, PYQs
+### Step 3: Fix Storage Policies (If You Get Infinite Recursion Error)
+If you see "infinite recursion detected in policy for relation 'profiles'" when uploading:
+1. Run the SQL in `supabase-fix-policies.sql` in your Supabase SQL Editor
+2. This fixes storage policies to avoid referencing profiles table
 
-### Real-time Features
-- Admin dashboard updates automatically when content is added/modified
-- User list updates in real-time when roles change
-- Content list refreshes automatically on changes
+### Step 4: Create Storage Buckets
+In Supabase Dashboard > Storage:
+1. Create bucket: **site-assets** (set to Public)
+2. Create bucket: **content-files** (set to Public)
 
-## Subjects Covered
-- Science (Physics, Chemistry, Biology)
-- Mathematics
-- Social Science (History, Geography, Civics, Economics)
-- English
-- Hindi
+### Step 5: Verify Setup
+After running the SQL:
+- Visit /class-10 - should show 5 subjects
+- Visit /admin - should show dashboard (requires login)
+- Upload content in admin panel - should work without errors
 
-## Environment Variables
-Required secrets (stored in Replit Secrets):
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SESSION_SECRET` - Session encryption key
+## Database Tables
+- **profiles**: User profiles with role (student/admin)
+- **subjects**: Science, Maths, SST, English, Hindi
+- **chapters**: Chapter listings for each subject
+- **notes**: Uploaded notes, MCQs, summaries, mind maps
+- **sample_papers**: Sample papers by year and subject
+- **pyqs**: Previous year questions by year and subject
+- **user_activity**: User activity tracking
+- **admin_activity**: Admin action logging
+- **site_settings**: Site configuration
 
-Optional:
-- `NEXT_PUBLIC_SITE_URL` - Production site URL for SEO
+## Public Pages Now Fetch From Database
+All public pages (notes, sample papers, PYQs, class-10) now:
+- Fetch content directly from Supabase database
+- Show "No content available yet" if database is empty
+- Display actual uploaded content from admin panel
+
+## Admin Access
+- Default admin email: `xyzapplywork@gmail.com`
+- Admin role can be assigned via User Management page
+- Admin routes: /admin, /admin/upload, /admin/content, /admin/users, /admin/settings
 
 ## Running the Project
 The project runs on port 5000 with the command:
 ```bash
 npm run dev
 ```
-
-## Admin Access
-- Default admin email: `xyzapplywork@gmail.com`
-- Admin role can be assigned via User Management page
-- Admin routes: /admin, /admin/upload, /admin/content, /admin/users, /admin/settings
 
 ## SEO Configuration
 The root layout includes comprehensive SEO metadata:
@@ -140,13 +153,11 @@ The root layout includes comprehensive SEO metadata:
 - Content uploads go directly to Supabase Storage
 - RLS policies ensure data security
 - Admin activity is logged for audit purposes
+- Storage policies use authenticated role (not is_admin) to avoid recursion
 
 ## Recent Changes
+- **Dec 2024**: Fixed infinite recursion in storage policies
+- **Dec 2024**: Updated public pages to fetch from Supabase instead of mock data
+- **Dec 2024**: Added graceful handling for missing Supabase configuration
+- **Dec 2024**: Created public-data.ts for server-side data fetching
 - **Dec 2024**: Initial project setup with full feature implementation
-- **Dec 2024**: Added real-time admin panel with:
-  - Live dashboard statistics from database
-  - Working upload functionality to Supabase
-  - Content management with CRUD operations
-  - User management with role changes
-  - Real-time subscriptions for live updates
-  - Comprehensive SQL setup for database and real-time

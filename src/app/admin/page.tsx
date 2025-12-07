@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { LayoutDashboard } from "lucide-react";
+import { createClientSafe, isSupabaseConfigured } from "@/lib/supabase/server";
+import { LayoutDashboard, AlertCircle } from "lucide-react";
 import AdminDashboardClient from "./components/admin-dashboard-client";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
   title: "Admin Dashboard | Online School",
@@ -9,7 +10,35 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const supabase = await createClient();
+  if (!isSupabaseConfigured()) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h1 className="text-xl font-bold mb-2">Supabase Not Configured</h1>
+            <p className="text-gray-600 mb-4">
+              Please configure your Supabase environment variables to access the admin panel.
+            </p>
+            <div className="text-left bg-gray-50 p-4 rounded-lg text-sm">
+              <p className="font-medium mb-2">Required environment variables:</p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>NEXT_PUBLIC_SUPABASE_URL</li>
+                <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const supabase = await createClientSafe();
+  
+  if (!supabase) {
+    redirect("/login");
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
