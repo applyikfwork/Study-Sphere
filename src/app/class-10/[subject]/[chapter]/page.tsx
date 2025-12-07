@@ -125,7 +125,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Study Resources</h2>
             
             <div className="space-y-8">
-              {Object.entries(notesByType).map(([type, typeNotes]) => {
+              {(Object.entries(notesByType) as [string, typeof notes][]).map(([type, typeNotes]) => {
                 const Icon = noteTypeIcons[type] || FileText;
                 const label = noteTypeLabels[type] || type;
 

@@ -213,8 +213,17 @@ export function useRealtimeMostViewed(limit: number = 10) {
   return { items, loading, error, refetch: fetchItems }
 }
 
+interface UserProfile {
+  id: string
+  email: string
+  full_name: string | null
+  role: string
+  is_active: boolean
+  created_at: string
+}
+
 export function useRealtimeUsers() {
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -268,8 +277,25 @@ export function useRealtimeUsers() {
   return { users, loading, error, refetch: fetchUsers }
 }
 
+interface ContentItem {
+  id: string
+  title: string
+  file_url: string | null
+  views: number
+  is_published: boolean
+  created_at: string
+  note_type?: string
+  year?: number
+  chapters?: {
+    title: string
+    chapter_number: number
+    subjects: { name: string; slug: string } | null
+  } | null
+  subjects?: { name: string; slug: string } | null
+}
+
 export function useRealtimeContent(contentType: 'notes' | 'sample_papers' | 'pyqs') {
-  const [content, setContent] = useState<any[]>([])
+  const [content, setContent] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

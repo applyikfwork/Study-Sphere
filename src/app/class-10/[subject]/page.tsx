@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getSubjectWithChapters, getNotesBySubject } from "@/lib/supabase/public-data";
-import { FileText, HelpCircle, BookOpen, CheckSquare, ArrowLeft, Download } from "lucide-react";
+import { FileText, HelpCircle, BookOpen, ArrowLeft, Download } from "lucide-react";
 
 interface SubjectPageProps {
   params: Promise<{ subject: string }>;
@@ -61,7 +61,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
   const subjectData = subject || { 
     name: fallback?.name || subjectSlug, 
     description: fallback?.description || '', 
-    chapters: [] 
+    chapters: [] as { id: string; chapter_number: number; title: string; description?: string | null }[]
   };
 
   const colors = colorMap[subjectSlug] || colorMap.science;
@@ -109,7 +109,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
           </div>
         ) : (
           <div className="grid gap-4">
-            {subjectData.chapters.map((chapter) => {
+            {subjectData.chapters.map((chapter: { id: string; chapter_number: number; title: string; description?: string | null }) => {
               const chapterNoteCount = notesByChapter[chapter.chapter_number] || 0;
               
               return (

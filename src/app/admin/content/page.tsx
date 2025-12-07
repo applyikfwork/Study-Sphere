@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
   ArrowLeft, Search, Trash2, Edit, Eye, FileText, 
   BookOpen, HelpCircle, Loader2, AlertCircle, ExternalLink
@@ -76,7 +76,7 @@ export default function ContentPage() {
     }
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: { id: string; title: string }) => {
     setEditingId(item.id);
     setEditTitle(item.title);
   };
@@ -205,7 +205,7 @@ export default function ContentPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          {getContentTypeIcon(activeTab === 'notes' ? item.note_type : activeTab)}
+                          {getContentTypeIcon(activeTab === 'notes' ? (item.note_type || 'notes') : activeTab)}
                         </div>
                         <div className="flex-1 min-w-0">
                           {editingId === item.id ? (
@@ -219,7 +219,7 @@ export default function ContentPage() {
                               />
                               <Button 
                                 size="sm" 
-                                onClick={() => handleSaveEdit(item.id, activeTab === 'notes' ? item.note_type : activeTab)}
+                                onClick={() => handleSaveEdit(item.id, activeTab === 'notes' ? (item.note_type || 'notes') : activeTab)}
                               >
                                 Save
                               </Button>
@@ -235,7 +235,7 @@ export default function ContentPage() {
                             <>
                               <p className="font-medium text-gray-900 truncate">{item.title}</p>
                               <div className="flex items-center gap-2 mt-1">
-                                {activeTab === 'notes' && getContentTypeBadge(item.note_type)}
+                                {activeTab === 'notes' && getContentTypeBadge(item.note_type || 'notes')}
                                 {item.chapters?.subjects?.name && (
                                   <span className="text-xs text-gray-500">
                                     {item.chapters.subjects.name} - Ch. {item.chapters.chapter_number}
@@ -287,7 +287,7 @@ export default function ContentPage() {
                           <button
                             onClick={() => handleTogglePublish(
                               item.id, 
-                              activeTab === 'notes' ? item.note_type : activeTab, 
+                              activeTab === 'notes' ? (item.note_type || 'notes') : activeTab, 
                               item.is_published !== false
                             )}
                             className={`px-2 py-1 text-xs rounded ${
@@ -299,7 +299,7 @@ export default function ContentPage() {
                             {item.is_published !== false ? 'Unpublish' : 'Publish'}
                           </button>
                           <button
-                            onClick={() => handleDelete(item.id, activeTab === 'notes' ? item.note_type : activeTab)}
+                            onClick={() => handleDelete(item.id, activeTab === 'notes' ? (item.note_type || 'notes') : activeTab)}
                             className="p-2 hover:bg-red-50 rounded-lg text-gray-600 hover:text-red-600"
                             disabled={deletingId === item.id}
                           >

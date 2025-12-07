@@ -236,15 +236,7 @@ export async function getPublicNotes(): Promise<Note[]> {
     
     if (!data) return []
     
-    return data.map((item: any) => ({
-      ...item,
-      chapters: item.chapters ? {
-        title: item.chapters.title,
-        chapter_number: item.chapters.chapter_number,
-        subject_id: item.chapters.subject_id,
-        subjects: item.chapters.subjects || null
-      } : null
-    }))
+    return data as unknown as Note[]
   } catch (err) {
     console.error('Error in getPublicNotes:', err)
     return []
@@ -308,15 +300,7 @@ export async function getNotesBySubject(subjectSlug: string): Promise<Note[]> {
     
     if (!data) return []
     
-    return data.map((item: any) => ({
-      ...item,
-      chapters: item.chapters ? {
-        title: item.chapters.title,
-        chapter_number: item.chapters.chapter_number,
-        subject_id: item.chapters.subject_id,
-        subjects: item.chapters.subjects || null
-      } : null
-    }))
+    return data as unknown as Note[]
   } catch (err) {
     console.error('Error in getNotesBySubject:', err)
     return []
@@ -359,10 +343,7 @@ export async function getPublicSamplePapers(): Promise<SamplePaper[]> {
     
     if (!data) return []
     
-    return data.map((item: any) => ({
-      ...item,
-      subjects: item.subjects || null
-    }))
+    return data as unknown as SamplePaper[]
   } catch (err) {
     console.error('Error in getPublicSamplePapers:', err)
     return []
@@ -404,10 +385,7 @@ export async function getPublicPYQs(): Promise<PYQ[]> {
     
     if (!data) return []
     
-    return data.map((item: any) => ({
-      ...item,
-      subjects: item.subjects || null
-    }))
+    return data as unknown as PYQ[]
   } catch (err) {
     console.error('Error in getPublicPYQs:', err)
     return []

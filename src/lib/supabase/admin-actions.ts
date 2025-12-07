@@ -202,7 +202,7 @@ export async function deleteContent(contentType: string, id: string) {
   }
 }
 
-export async function updateContent(contentType: string, id: string, data: Record<string, any>) {
+export async function updateContent(contentType: string, id: string, data: Record<string, string | number | boolean>) {
   const { isAdmin, userId, error: authError } = await checkAdminAccess()
   if (!isAdmin) {
     return { success: false, error: authError }

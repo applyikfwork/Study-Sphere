@@ -49,7 +49,8 @@ export default function UploadPage() {
   ];
 
   const needsChapter = contentTypes.find(t => t.id === contentType)?.needsChapter ?? true;
-  const needsYear = contentType === "sample_paper" || contentType === "pyq";
+  const _needsYear = contentType === "sample_paper" || contentType === "pyq";
+  void _needsYear;
 
   useEffect(() => {
     async function loadSubjects() {
