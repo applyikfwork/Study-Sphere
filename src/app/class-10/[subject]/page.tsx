@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getSubjectWithChapters, getNotesBySubject } from "@/lib/supabase/public-data";
 import { FileText, HelpCircle, BookOpen, ArrowLeft, Download } from "lucide-react";
+import { Metadata } from "next";
 
 interface SubjectPageProps {
   params: Promise<{ subject: string }>;
@@ -28,7 +29,84 @@ const subjectFallbackInfo: Record<string, { name: string; description: string }>
   hindi: { name: "Hindi", description: "Hindi Course A and B for Class 10 CBSE" },
 };
 
-export async function generateMetadata({ params }: SubjectPageProps) {
+const subjectSEOKeywords: Record<string, string[]> = {
+  science: [
+    "class 10 science notes",
+    "class 10 science notes pdf",
+    "class 10 science chapter wise notes",
+    "class 10 science important questions",
+    "ncert solutions class 10 science",
+    "class 10 science mcqs",
+    "class 10 science short notes",
+    "class 10 science formula sheet",
+    "class 10 physics notes",
+    "class 10 chemistry notes",
+    "class 10 biology notes",
+    "class 10 science ncert solutions",
+    "class 10 science pyq",
+    "class 10 science sample paper 2025",
+  ],
+  maths: [
+    "class 10 maths notes",
+    "class 10 maths notes pdf",
+    "class 10 maths formulas",
+    "class 10 maths important questions",
+    "class 10 maths ncert solutions",
+    "class 10 maths mcqs",
+    "class 10 maths question bank",
+    "class 10 maths chapter wise notes",
+    "class 10 algebra notes",
+    "class 10 geometry notes",
+    "class 10 trigonometry notes",
+    "class 10 maths pyq",
+    "class 10 maths sample paper 2025",
+  ],
+  sst: [
+    "class 10 sst notes",
+    "class 10 social science notes",
+    "class 10 sst notes pdf",
+    "class 10 history notes",
+    "class 10 geography notes",
+    "class 10 civics notes",
+    "class 10 economics notes",
+    "class 10 sst important questions",
+    "class 10 sst ncert solutions",
+    "class 10 sst chapter wise notes",
+    "class 10 sst pyq",
+    "class 10 sst sample paper 2025",
+  ],
+  english: [
+    "class 10 english notes",
+    "class 10 english notes pdf",
+    "class 10 english summary",
+    "class 10 english important questions",
+    "class 10 english ncert solutions",
+    "class 10 first flight notes",
+    "class 10 footprints without feet notes",
+    "class 10 poems summary",
+    "class 10 english grammar notes",
+    "class 10 english writing skills",
+    "class 10 letter writing format",
+    "class 10 english pyq",
+    "class 10 english sample paper 2025",
+  ],
+  hindi: [
+    "class 10 hindi notes",
+    "class 10 hindi notes pdf",
+    "class 10 hindi important questions",
+    "class 10 hindi ncert solutions",
+    "class 10 hindi grammar",
+    "class 10 hindi vyakaran notes",
+    "class 10 hindi kshitij notes",
+    "class 10 hindi kritika notes",
+    "class 10 hindi sparsh notes",
+    "class 10 hindi sanchayan notes",
+    "class 10 hindi pyq",
+    "class 10 hindi sample paper 2025",
+  ],
+};
+
+export async function generateMetadata({ params }: SubjectPageProps): Promise<Metadata> {
   const { subject: subjectSlug } = await params;
   const subject = await getSubjectWithChapters(subjectSlug);
   const fallback = subjectFallbackInfo[subjectSlug];
@@ -38,10 +116,37 @@ export async function generateMetadata({ params }: SubjectPageProps) {
   }
 
   const name = subject?.name || fallback?.name || subjectSlug;
+  const keywords = subjectSEOKeywords[subjectSlug] || [];
   
   return {
-    title: `Class 10 ${name} Notes - Chapter-wise Study Material | Online School`,
-    description: `Free Class 10 ${name} notes, NCERT solutions, PYQs, important questions, and MCQs. Complete chapter-wise study material for CBSE Board 2025.`,
+    title: `Class 10 ${name} Notes PDF Free Download - Chapter Wise NCERT Solutions 2025`,
+    description: `Download free Class 10 ${name} notes PDF. Get chapter-wise ${name} notes, NCERT solutions, important questions, MCQs, PYQs, and sample papers. Complete ${name} study material for CBSE Board Exam 2025. Best ${name} notes for Class 10.`,
+    keywords: keywords,
+    openGraph: {
+      title: `Class 10 ${name} Notes PDF Free Download - NCERT Solutions 2025 | Online School`,
+      description: `Free Class 10 ${name} notes PDF. Chapter-wise notes, NCERT solutions, important questions, MCQs for CBSE Board Exam 2025.`,
+      type: "website",
+    },
+  };
+}
+
+function generateSubjectJsonLd(subjectName: string, subjectSlug: string, chapters: { chapter_number: number; title: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: `Class 10 ${subjectName}`,
+    description: `Complete Class 10 ${subjectName} study material with notes, NCERT solutions, and important questions`,
+    provider: {
+      "@type": "Organization",
+      name: "Online School",
+    },
+    educationalLevel: "Class 10",
+    hasCourseInstance: chapters.map((ch, index) => ({
+      "@type": "CourseInstance",
+      position: index + 1,
+      name: `Chapter ${ch.chapter_number}: ${ch.title}`,
+      description: `Class 10 ${subjectName} Chapter ${ch.chapter_number} - ${ch.title}`,
+    })),
   };
 }
 
@@ -77,23 +182,33 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
     return acc;
   }, {} as Record<number, number>);
 
+  const jsonLd = generateSubjectJsonLd(
+    subjectData.name, 
+    subjectSlug, 
+    subjectData.chapters.map(ch => ({ chapter_number: ch.chapter_number, title: ch.title }))
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className={`${colors.bg} text-white py-12`}>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <Link href="/class-10" className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6">
             <ArrowLeft className="h-4 w-4" />
             Back to Class 10
           </Link>
-          <h1 className="text-4xl font-bold mb-2">Class 10 {subjectData.name}</h1>
-          <p className="text-lg opacity-90">{subjectData.description}</p>
+          <h1 className="text-4xl font-bold mb-2">Class 10 {subjectData.name} Notes PDF</h1>
+          <p className="text-lg opacity-90">{subjectData.description} - Free chapter-wise notes, NCERT solutions, important questions for CBSE Board 2025</p>
           <div className="mt-4 flex gap-2">
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
               {subjectData.chapters.length} Chapters
             </Badge>
             {notes.length > 0 && (
               <Badge variant="secondary" className="bg-white/20 text-white border-0">
-                {notes.length} Resources Available
+                {notes.length} Free Resources
               </Badge>
             )}
           </div>
@@ -130,11 +245,11 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                           <div className="flex flex-wrap gap-3 mt-3">
                             <div className="flex items-center gap-1 text-sm text-gray-500">
                               <FileText className="h-4 w-4" />
-                              <span>Notes</span>
+                              <span>Notes PDF</span>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
                               <HelpCircle className="h-4 w-4" />
-                              <span>PYQs</span>
+                              <span>Important Questions</span>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
                               <BookOpen className="h-4 w-4" />
@@ -143,13 +258,13 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                             {chapterNoteCount > 0 && (
                               <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
                                 <Download className="h-4 w-4" />
-                                <span>{chapterNoteCount} Available</span>
+                                <span>{chapterNoteCount} Free Downloads</span>
                               </div>
                             )}
                           </div>
                         </div>
                         <Button variant="ghost" className={colors.text}>
-                          View
+                          View Notes
                         </Button>
                       </div>
                     </CardContent>

@@ -160,7 +160,36 @@ The root layout includes comprehensive SEO metadata:
 - **Terms & Conditions**: /terms - Terms of service covering educational use, content policy, disclaimers
 - **Terms Acceptance**: Users must accept Privacy Policy and Terms before signing up or logging in
 
+## SEO Optimization
+The website has comprehensive SEO implementation for ranking on Class 10 CBSE keywords:
+
+### SEO Features
+1. **Root Layout Metadata**: 100+ targeted keywords covering all subjects, chapters, and content types
+2. **Dynamic Sitemap** (`/sitemap.xml`): Auto-generated sitemap with all pages, subjects, and chapters
+3. **Robots.txt** (`/robots.txt`): Configured for Googlebot, Bingbot with proper allow/disallow rules
+4. **JSON-LD Structured Data**: Educational content schema on all pages (Organization, WebSite, Course, LearningResource)
+5. **Page-Level SEO**: Custom metadata for each page type with targeted keywords
+6. **Open Graph & Twitter Cards**: Optimized for social sharing
+
+### Target Keywords Include
+- General: class 10 notes, class 10 study material, class 10 ncert solutions, class 10 pyq, class 10 sample paper 2025
+- Science: class 10 science notes, class 10 physics notes, class 10 chemistry notes, class 10 biology notes
+- Maths: class 10 maths notes, class 10 maths formulas, class 10 trigonometry notes
+- SST: class 10 sst notes, class 10 history notes, class 10 geography notes, class 10 civics notes
+- English: class 10 english notes, class 10 first flight notes, class 10 footprints notes
+- Hindi: class 10 hindi notes, class 10 kshitij notes, class 10 hindi vyakaran notes
+
+### Google Search Console Setup (Required)
+After deployment, submit sitemap to Google Search Console:
+1. Add your domain to Google Search Console
+2. Submit sitemap: `https://yourdomain.com/sitemap.xml`
+3. Replace `google-site-verification-code` in layout.tsx with your verification code
+
 ## Recent Changes
+- **Dec 2024**: Added comprehensive SEO optimization with 100+ targeted keywords
+- **Dec 2024**: Created dynamic sitemap.xml and robots.txt
+- **Dec 2024**: Added JSON-LD structured data for educational content (Schema.org)
+- **Dec 2024**: Enhanced page-level SEO for all major pages
 - **Dec 2024**: Added Privacy Policy page at /privacy
 - **Dec 2024**: Added Terms & Conditions page at /terms
 - **Dec 2024**: Added terms acceptance checkbox to signup and login pages

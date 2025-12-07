@@ -4,10 +4,36 @@ import { Badge } from "@/components/ui/badge";
 import { getPublicSubjects, getPublicNotes } from "@/lib/supabase/public-data";
 import { FileText, Download, ArrowRight, Beaker, Calculator, Globe, BookOpen, Languages, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
 
-export const metadata = {
-  title: "Class 10 Notes - Free PDF Download | Online School",
-  description: "Download free Class 10 notes for all subjects. Chapter-wise CBSE notes for Science, Maths, Social Science, English, and Hindi. Perfect for Board Exams 2025 preparation.",
+export const metadata: Metadata = {
+  title: "Class 10 Notes PDF Free Download - CBSE Chapter Wise Notes 2025",
+  description: "Download free Class 10 notes PDF for all subjects. Get chapter-wise CBSE notes for Science, Maths, Social Science, English, Hindi. NCERT solutions, short notes, revision notes, handwritten notes for Board Exam 2025. Best Class 10 study notes.",
+  keywords: [
+    "class 10 notes pdf",
+    "class 10 notes free download",
+    "class 10 chapter wise notes",
+    "class 10 science notes pdf",
+    "class 10 maths notes pdf",
+    "class 10 sst notes pdf",
+    "class 10 english notes pdf",
+    "class 10 hindi notes pdf",
+    "cbse class 10 notes 2025",
+    "class 10 revision notes",
+    "class 10 short notes",
+    "class 10 handwritten notes",
+    "class 10 ncert notes",
+    "class 10 toppers notes",
+    "class 10 all chapters notes",
+    "class 10 important notes",
+    "class 10 exam notes",
+    "class 10 board preparation notes",
+  ],
+  openGraph: {
+    title: "Class 10 Notes PDF Free Download - Chapter Wise Notes 2025 | Online School",
+    description: "Download free Class 10 notes PDF. Chapter-wise CBSE notes for Science, Maths, SST, English, Hindi. Best study notes for Board Exam 2025.",
+    type: "website",
+  },
 };
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +62,58 @@ function getColorForSubject(slug: string) {
   return colorMap[slug] || colorMap.science;
 }
 
+const notesJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Class 10 Notes PDF Free Download",
+  description: "Free chapter-wise Class 10 CBSE notes for all subjects - Science, Maths, SST, English, Hindi",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: [
+      {
+        "@type": "CreativeWork",
+        position: 1,
+        name: "Class 10 Science Notes PDF",
+        description: "Chapter-wise Physics, Chemistry, Biology notes for CBSE Class 10",
+        educationalLevel: "Class 10",
+        learningResourceType: "Notes",
+      },
+      {
+        "@type": "CreativeWork",
+        position: 2,
+        name: "Class 10 Maths Notes PDF",
+        description: "Chapter-wise Mathematics notes with formulas and solved examples",
+        educationalLevel: "Class 10",
+        learningResourceType: "Notes",
+      },
+      {
+        "@type": "CreativeWork",
+        position: 3,
+        name: "Class 10 Social Science Notes PDF",
+        description: "History, Geography, Civics, Economics notes for CBSE Class 10",
+        educationalLevel: "Class 10",
+        learningResourceType: "Notes",
+      },
+      {
+        "@type": "CreativeWork",
+        position: 4,
+        name: "Class 10 English Notes PDF",
+        description: "First Flight, Footprints, Grammar notes for CBSE Class 10",
+        educationalLevel: "Class 10",
+        learningResourceType: "Notes",
+      },
+      {
+        "@type": "CreativeWork",
+        position: 5,
+        name: "Class 10 Hindi Notes PDF",
+        description: "Kshitij, Kritika, Sparsh, Sanchayan notes for CBSE Class 10",
+        educationalLevel: "Class 10",
+        learningResourceType: "Notes",
+      },
+    ],
+  },
+};
+
 export default async function NotesPage() {
   const [subjects, notes] = await Promise.all([
     getPublicSubjects(),
@@ -55,18 +133,22 @@ export default async function NotesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(notesJsonLd) }}
+      />
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-4">
             <FileText className="h-10 w-10" />
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              Free Download
+              Free PDF Download
             </Badge>
           </div>
-          <h1 className="text-4xl font-bold mb-4">Class 10 Notes</h1>
+          <h1 className="text-4xl font-bold mb-4">Class 10 Notes PDF Download</h1>
           <p className="text-lg text-blue-100 max-w-2xl">
             High-quality, chapter-wise notes prepared by expert teachers. 
-            Download PDF notes for all subjects and ace your Board Exams 2025.
+            Download free PDF notes for all subjects and ace your Board Exams 2025.
           </p>
         </div>
       </div>
@@ -95,7 +177,7 @@ export default async function NotesPage() {
                   <div className={`w-10 h-10 rounded-lg ${colors.light} flex items-center justify-center`}>
                     <Icon className={`h-5 w-5 ${colors.text}`} />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">{subject.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">{subject.name} Notes PDF</h2>
                   <Badge variant="outline">{subjectNotes.length} Notes</Badge>
                 </div>
 

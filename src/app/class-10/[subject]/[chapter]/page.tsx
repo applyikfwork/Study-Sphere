@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getChapterWithNotes } from "@/lib/supabase/public-data";
 import { FileText, HelpCircle, BookOpen, CheckSquare, Download, ArrowLeft, Brain, ExternalLink, Eye } from "lucide-react";
+import { Metadata } from "next";
 
 interface ChapterPageProps {
   params: Promise<{ subject: string; chapter: string }>;
@@ -20,7 +21,57 @@ const subjectFallbackInfo: Record<string, { name: string }> = {
   hindi: { name: "Hindi" },
 };
 
-export async function generateMetadata({ params }: ChapterPageProps) {
+const chapterSEOTemplates: Record<string, (chapterTitle: string, chapterNum: number) => string[]> = {
+  science: (title, num) => [
+    `class 10 ${title.toLowerCase()} notes`,
+    `class 10 ${title.toLowerCase()} notes pdf`,
+    `class 10 science chapter ${num} notes`,
+    `class 10 ${title.toLowerCase()} important questions`,
+    `class 10 ${title.toLowerCase()} ncert solutions`,
+    `class 10 ${title.toLowerCase()} mcqs`,
+    `${title.toLowerCase()} class 10 notes`,
+    `${title.toLowerCase()} class 10 pdf`,
+  ],
+  maths: (title, num) => [
+    `class 10 ${title.toLowerCase()} notes`,
+    `class 10 ${title.toLowerCase()} notes pdf`,
+    `class 10 maths chapter ${num} notes`,
+    `class 10 ${title.toLowerCase()} important questions`,
+    `class 10 ${title.toLowerCase()} ncert solutions`,
+    `class 10 ${title.toLowerCase()} formulas`,
+    `${title.toLowerCase()} class 10 notes`,
+    `${title.toLowerCase()} class 10 pdf`,
+  ],
+  sst: (title, num) => [
+    `class 10 ${title.toLowerCase()} notes`,
+    `class 10 ${title.toLowerCase()} notes pdf`,
+    `class 10 sst chapter ${num} notes`,
+    `class 10 ${title.toLowerCase()} important questions`,
+    `class 10 ${title.toLowerCase()} ncert solutions`,
+    `${title.toLowerCase()} class 10 notes`,
+    `${title.toLowerCase()} class 10 pdf`,
+  ],
+  english: (title, num) => [
+    `class 10 ${title.toLowerCase()} notes`,
+    `class 10 ${title.toLowerCase()} summary`,
+    `class 10 english chapter ${num} notes`,
+    `class 10 ${title.toLowerCase()} important questions`,
+    `class 10 ${title.toLowerCase()} ncert solutions`,
+    `${title.toLowerCase()} class 10 summary`,
+    `${title.toLowerCase()} class 10 notes`,
+  ],
+  hindi: (title, num) => [
+    `class 10 ${title.toLowerCase()} notes`,
+    `class 10 ${title.toLowerCase()} summary`,
+    `class 10 hindi chapter ${num} notes`,
+    `class 10 ${title.toLowerCase()} important questions`,
+    `class 10 ${title.toLowerCase()} ncert solutions`,
+    `${title.toLowerCase()} class 10 notes`,
+    `${title.toLowerCase()} class 10 summary`,
+  ],
+};
+
+export async function generateMetadata({ params }: ChapterPageProps): Promise<Metadata> {
   const { subject: subjectSlug, chapter: chapterSlug } = await params;
   const chapterNumber = parseInt(chapterSlug.replace("chapter-", ""));
   
@@ -33,10 +84,19 @@ export async function generateMetadata({ params }: ChapterPageProps) {
 
   const subjectName = data?.subject?.name || fallback?.name || subjectSlug;
   const chapterTitle = data?.chapter?.title || `Chapter ${chapterNumber}`;
+  
+  const keywordGenerator = chapterSEOTemplates[subjectSlug] || chapterSEOTemplates.science;
+  const keywords = keywordGenerator(chapterTitle, chapterNumber);
 
   return {
-    title: `${chapterTitle} - Class 10 ${subjectName} Notes | Online School`,
-    description: `Free notes, NCERT solutions, PYQs, and important questions for ${chapterTitle}. Class 10 ${subjectName} Chapter ${chapterNumber} complete study material.`,
+    title: `${chapterTitle} Notes PDF - Class 10 ${subjectName} Chapter ${chapterNumber} Free Download`,
+    description: `Download free ${chapterTitle} notes PDF for Class 10 ${subjectName}. Get chapter ${chapterNumber} NCERT solutions, important questions, MCQs, and summary. Complete ${chapterTitle} study material for CBSE Board Exam 2025.`,
+    keywords: keywords,
+    openGraph: {
+      title: `${chapterTitle} Notes PDF - Class 10 ${subjectName} Chapter ${chapterNumber} | Online School`,
+      description: `Free ${chapterTitle} notes PDF for Class 10 ${subjectName}. NCERT solutions, important questions, MCQs for CBSE Board Exam 2025.`,
+      type: "article",
+    },
   };
 }
 
@@ -57,12 +117,33 @@ const noteTypeIcons: Record<string, typeof FileText> = {
 };
 
 const noteTypeLabels: Record<string, string> = {
-  notes: 'Notes',
+  notes: 'Notes PDF',
   important_questions: 'Important Questions',
   mcqs: 'MCQs',
   summary: 'Summary',
   mind_map: 'Mind Map',
 };
+
+function generateChapterJsonLd(subjectName: string, chapterTitle: string, chapterNumber: number) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LearningResource",
+    name: `${chapterTitle} - Class 10 ${subjectName} Notes`,
+    description: `Complete study material for ${chapterTitle}, Class 10 ${subjectName} Chapter ${chapterNumber}`,
+    educationalLevel: "Class 10",
+    learningResourceType: ["Notes", "NCERT Solutions", "Important Questions", "MCQs"],
+    teaches: chapterTitle,
+    isPartOf: {
+      "@type": "Course",
+      name: `Class 10 ${subjectName}`,
+      provider: { "@type": "Organization", name: "Online School" },
+    },
+    provider: { "@type": "Organization", name: "Online School" },
+    accessMode: "textual",
+    accessibilityFeature: ["readingOrder", "tableOfContents"],
+    isAccessibleForFree: true,
+  };
+}
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
   const { subject: subjectSlug, chapter: chapterSlug } = await params;
@@ -92,8 +173,14 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
   const hasNotes = notes.length > 0;
 
+  const jsonLd = generateChapterJsonLd(subject.name, chapter.title, chapterNumber);
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className={`bg-gradient-to-r ${colors.gradient} text-white py-12`}>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <Link href={`/class-10/${subjectSlug}`} className="inline-flex items-center gap-2 text-white/80 hover:text-white mb-6">
@@ -104,9 +191,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
               Chapter {chapter.chapter_number}
             </Badge>
+            <Badge variant="secondary" className="bg-white/20 text-white border-0">
+              Free PDF Download
+            </Badge>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">{chapter.title}</h1>
-          <p className="text-lg opacity-90">Class 10 {subject.name}</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{chapter.title} Notes PDF</h1>
+          <p className="text-lg opacity-90">Class 10 {subject.name} - Free NCERT Solutions, Important Questions, MCQs</p>
         </div>
       </div>
 
@@ -122,7 +212,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Study Resources</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Free Study Resources - Download PDF</h2>
             
             <div className="space-y-8">
               {(Object.entries(notesByType) as [string, typeof notes][]).map(([type, typeNotes]) => {
@@ -161,7 +251,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                               <a href={note.file_url} target="_blank" rel="noopener noreferrer">
                                 <Button className="w-full gap-2">
                                   <Download className="h-4 w-4" />
-                                  Download {label}
+                                  Download Free PDF
                                 </Button>
                               </a>
                             ) : (
@@ -188,15 +278,15 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Need More Practice?</h3>
                   <p className="text-gray-600">
-                    Access our comprehensive practice tests and sample papers to boost your preparation.
+                    Access our comprehensive practice tests and sample papers to boost your Board Exam 2025 preparation.
                   </p>
                 </div>
                 <div className="flex gap-4">
                   <Link href="/sample-papers">
-                    <Button variant="outline">Sample Papers</Button>
+                    <Button variant="outline">Sample Papers 2025</Button>
                   </Link>
                   <Link href="/pyqs">
-                    <Button>Practice Tests</Button>
+                    <Button>Previous Year Questions</Button>
                   </Link>
                 </div>
               </div>
