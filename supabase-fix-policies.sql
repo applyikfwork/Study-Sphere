@@ -56,6 +56,13 @@ DROP POLICY IF EXISTS "Allow authenticated updates to site-assets" ON storage.ob
 DROP POLICY IF EXISTS "Allow authenticated deletes from site-assets" ON storage.objects;
 DROP POLICY IF EXISTS "Allow authenticated updates to content-files" ON storage.objects;
 DROP POLICY IF EXISTS "Allow authenticated deletes from content-files" ON storage.objects;
+-- Drop the exact policy names we're about to create
+DROP POLICY IF EXISTS "Authenticated upload to site-assets" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated update site-assets" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated delete from site-assets" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated upload to content-files" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated update content-files" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated delete from content-files" ON storage.objects;
 
 -- STEP 3: Create fixed policies for profiles
 CREATE POLICY "Allow all authenticated to view profiles" 
