@@ -137,7 +137,23 @@ export default function UploadPage() {
         body: formData,
       });
       
-      const result = await response.json();
+      if (!response.ok) {
+        const text = await response.text();
+        if (text.includes('Request Entity Too Large') || text.includes('413')) {
+          setError("File is too large. Maximum file size is 4.5MB for deployed version.");
+          return;
+        }
+        setError(`Upload failed: ${response.status} - ${text.slice(0, 100)}`);
+        return;
+      }
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        setError("Server returned an invalid response. Please try again.");
+        return;
+      }
       
       if (!result) {
         setError("Server error: No response from upload service. Please check your Supabase configuration.");
