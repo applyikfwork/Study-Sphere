@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Settings,
   FolderOpen,
-  UserCog
+  UserCog,
+  Files
 } from 'lucide-react'
 
 function formatNumber(num: number): string {
@@ -168,7 +169,7 @@ export default function AdminDashboardClient() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Link href="/admin/upload">
           <Card className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer group">
             <CardContent className="p-6 flex items-center gap-4">
@@ -176,8 +177,22 @@ export default function AdminDashboardClient() {
                 <Upload className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="font-semibold">Upload Content</p>
-                <p className="text-sm text-gray-500">Add new study materials</p>
+                <p className="font-semibold">Upload</p>
+                <p className="text-sm text-gray-500">Single file</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/bulk-upload">
+          <Card className="border-0 shadow-sm hover:shadow-md transition-all cursor-pointer group">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-full bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
+                <Files className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div>
+                <p className="font-semibold">Bulk Upload</p>
+                <p className="text-sm text-gray-500">Multiple files</p>
               </div>
             </CardContent>
           </Card>

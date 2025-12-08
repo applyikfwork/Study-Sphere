@@ -447,3 +447,161 @@ export async function getChaptersBySubject(subjectId: string) {
   
   return data
 }
+
+export async function bulkUploadContent(formData: FormData) {
+  try {
+    const { isAdmin, userId, error: authError } = await checkAdminAccess()
+    if (!isAdmin) {
+      return { success: false, error: authError || 'Not authorized', results: [] }
+    }
+
+    const supabase = await createClient()
+    
+    const contentType = formData.get('contentType') as string
+    const subjectId = formData.get('subjectId') as string
+    const chapterId = formData.get('chapterId') as string
+    const year = formData.get('year') as string
+    const fileCount = parseInt(formData.get('fileCount') as string) || 0
+
+    if (fileCount === 0) {
+      return { success: false, error: 'No files to upload', results: [] }
+    }
+
+    const results: { id: string; success: boolean; error?: string }[] = []
+
+    for (let i = 0; i < fileCount; i++) {
+      const fileId = formData.get(`file_${i}_id`) as string
+      const file = formData.get(`file_${i}`) as File
+      const title = formData.get(`file_${i}_title`) as string
+      const fakeViews = parseInt(formData.get(`file_${i}_views`) as string) || 0
+      const fakeDownloads = parseInt(formData.get(`file_${i}_downloads`) as string) || 0
+
+      try {
+        if (!title || !file) {
+          results.push({ id: fileId, success: false, error: 'Title and file are required' })
+          continue
+        }
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf'
+        const timestamp = Date.now()
+        const randomStr = Math.random().toString(36).substring(2, 9)
+        const fileName = `${contentType}/${timestamp}-${randomStr}-${i}.${fileExt}`
+
+        const arrayBuffer = await file.arrayBuffer()
+        const fileBuffer = new Uint8Array(arrayBuffer)
+
+        const { error: uploadError } = await supabase.storage
+          .from('content-files')
+          .upload(fileName, fileBuffer, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type || 'application/pdf'
+          })
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          results.push({ id: fileId, success: false, error: 'File upload failed: ' + uploadError.message })
+          continue
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('content-files')
+          .getPublicUrl(fileName)
+
+        const fileUrl = urlData.publicUrl
+
+        let dbError = null
+
+        if (contentType === 'notes' || contentType === 'important_questions' || contentType === 'mcqs' || contentType === 'summary' || contentType === 'mind_map') {
+          const { error } = await supabase
+            .from('notes')
+            .insert({
+              chapter_id: chapterId,
+              title,
+              file_url: fileUrl,
+              file_name: file.name,
+              file_size: file.size,
+              note_type: contentType,
+              is_published: true,
+              views: fakeViews,
+              downloads: fakeDownloads
+            })
+          dbError = error
+        } else if (contentType === 'sample_paper') {
+          const { error } = await supabase
+            .from('sample_papers')
+            .insert({
+              subject_id: subjectId,
+              title,
+              year: parseInt(year),
+              file_url: fileUrl,
+              file_name: file.name,
+              file_size: file.size,
+              is_published: true,
+              views: fakeViews,
+              downloads: fakeDownloads
+            })
+          dbError = error
+        } else if (contentType === 'pyq') {
+          const { error } = await supabase
+            .from('pyqs')
+            .insert({
+              subject_id: subjectId,
+              title,
+              year: parseInt(year),
+              file_url: fileUrl,
+              file_name: file.name,
+              file_size: file.size,
+              is_published: true,
+              views: fakeViews,
+              downloads: fakeDownloads
+            })
+          dbError = error
+        }
+
+        if (dbError) {
+          console.error('Database insert error:', dbError)
+          results.push({ id: fileId, success: false, error: 'Database error: ' + dbError.message })
+          continue
+        }
+
+        try {
+          await supabase
+            .from('admin_activity')
+            .insert({
+              admin_id: userId,
+              action: 'bulk_upload',
+              entity_type: contentType,
+              entity_title: title,
+              details: { file_name: file.name, file_size: file.size }
+            })
+        } catch {
+        }
+
+        results.push({ id: fileId, success: true })
+      } catch (err) {
+        console.error('Upload error for file:', fileId, err)
+        results.push({ id: fileId, success: false, error: err instanceof Error ? err.message : 'Upload failed' })
+      }
+    }
+
+    revalidatePath('/admin')
+    revalidatePath('/admin/content')
+    revalidatePath('/notes')
+    revalidatePath('/sample-papers')
+    revalidatePath('/pyqs')
+
+    const successCount = results.filter(r => r.success).length
+    const allSuccess = successCount === fileCount
+
+    return { 
+      success: allSuccess, 
+      results,
+      message: `Uploaded ${successCount} of ${fileCount} files`
+    }
+  } catch (err) {
+    console.error('Bulk upload error:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    return { success: false, error: 'Failed to upload content: ' + errorMessage, results: [] }
+  }
+}
