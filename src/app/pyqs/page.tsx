@@ -1,10 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getPublicPYQs } from "@/lib/supabase/public-data";
-import { History, Download, FileText, CheckCircle, ExternalLink } from "lucide-react";
+import { History, FileText, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Metadata } from "next";
+import { PyqsClient } from "@/components/pdf-viewer/pyqs-client";
 
 export const metadata: Metadata = {
   title: "Class 10 Previous Year Questions (PYQs) PDF Download - CBSE Board 2015-2024",
@@ -160,52 +160,7 @@ export default async function PYQsPage() {
             </Link>
           </div>
         ) : (
-          Object.entries(groupedPYQs).map(([subject, papers]) => {
-            const colors = getSubjectColor(subject);
-
-            return (
-              <div key={subject} className="mb-10">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${colors.bg}`} />
-                  {subject} Previous Year Questions
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {papers.map((paper) => (
-                    <Card key={paper.id} className="card-hover border-0 shadow-lg">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className={`w-12 h-12 rounded-lg ${colors.light} flex items-center justify-center`}>
-                            <span className={`font-bold text-lg ${colors.text}`}>{paper.year.toString().slice(-2)}</span>
-                          </div>
-                          <Badge variant="outline">{paper.year}</Badge>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 mb-2">
-                          {paper.title}
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                          CBSE Class 10 {subject} {paper.year}
-                        </p>
-                        {paper.file_url ? (
-                          <a href={paper.file_url} target="_blank" rel="noopener noreferrer">
-                            <Button className="w-full gap-2" variant="outline">
-                              <Download className="h-4 w-4" />
-                              Download PDF
-                            </Button>
-                          </a>
-                        ) : (
-                          <Button className="w-full gap-2" variant="outline" disabled>
-                            <ExternalLink className="h-4 w-4" />
-                            Coming Soon
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            );
-          })
+          <PyqsClient groupedPYQs={groupedPYQs} getSubjectColor={getSubjectColor} />
         )}
       </div>
     </div>

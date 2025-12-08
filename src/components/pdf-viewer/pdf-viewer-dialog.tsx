@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
 import {
   Dialog,
@@ -18,13 +18,10 @@ import {
   Minimize2,
   Download,
   X,
-  RotateCw,
   Loader2,
   FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 interface PdfViewerDialogProps {
   isOpen: boolean
@@ -46,7 +43,26 @@ export function PdfViewerDialog({
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(0)
-  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [workerReady, setWorkerReady] = useState<boolean>(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  
+  const numPagesRef = useRef(numPages)
+  const pageNumberRef = useRef(pageNumber)
+  
+  useEffect(() => {
+    numPagesRef.current = numPages
+  }, [numPages])
+  
+  useEffect(() => {
+    pageNumberRef.current = pageNumber
+  }, [pageNumber])
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
+      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+    }
+    setWorkerReady(true)
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -65,38 +81,40 @@ export function PdfViewerDialog({
       }
     }
 
-    updateWidth()
-    window.addEventListener("resize", updateWidth)
-    return () => window.removeEventListener("resize", updateWidth)
+    if (isOpen) {
+      updateWidth()
+      window.addEventListener("resize", updateWidth)
+      return () => window.removeEventListener("resize", updateWidth)
+    }
   }, [isOpen])
 
   useEffect(() => {
+    if (!isOpen) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return
-      
       switch (e.key) {
         case "ArrowLeft":
-          goToPrevPage()
+          setPageNumber((prev) => Math.max(prev - 1, 1))
           break
         case "ArrowRight":
-          goToNextPage()
+          setPageNumber((prev) => Math.min(prev + 1, numPagesRef.current))
           break
         case "Escape":
           if (isFullscreen) {
-            toggleFullscreen()
+            setIsFullscreen(false)
           }
           break
         case "+":
         case "=":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault()
-            zoomIn()
+            setScale((prev) => Math.min(prev + 0.25, 3))
           }
           break
         case "-":
           if (e.ctrlKey || e.metaKey) {
             e.preventDefault()
-            zoomOut()
+            setScale((prev) => Math.max(prev - 0.25, 0.5))
           }
           break
       }
@@ -104,7 +122,7 @@ export function PdfViewerDialog({
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [isOpen, isFullscreen, pageNumber, numPages])
+  }, [isOpen, isFullscreen])
 
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages)
@@ -158,6 +176,10 @@ export function PdfViewerDialog({
     
     return Math.min(maxWidth, 800) * scale
   }, [containerWidth, scale, isFullscreen])
+
+  if (!workerReady) {
+    return null
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

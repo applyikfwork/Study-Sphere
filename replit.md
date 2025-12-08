@@ -72,6 +72,7 @@ src/
 5. **PYQs**: Previous year questions by subject and year
 6. **Authentication**: Login, signup with Supabase Auth
 7. **User Profile**: Saved content and study progress
+8. **PDF Viewer**: In-app PDF viewing with zoom, page navigation, fullscreen mode
 
 ### Admin Panel Features
 1. **Real-time Dashboard**: Live statistics (students, notes, views, etc.)
@@ -185,6 +186,8 @@ The Google Search Console verification code has been added:
 - Submit sitemap: `https://class10thpdf.vercel.app/sitemap.xml`
 
 ## Recent Changes
+- **Dec 2024**: Added in-app PDF viewer with zoom, page navigation, fullscreen, and responsive design
+- **Dec 2024**: Updated chapter notes, sample papers, and PYQs pages to use the new PDF viewer
 - **Dec 2024**: Added Google Search Console verification meta tag
 - **Dec 2024**: Updated all URLs to use class10thpdf.vercel.app
 - **Dec 2024**: Added fake view and download count fields to admin upload

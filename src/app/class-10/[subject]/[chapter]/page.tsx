@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getChapterWithNotes } from "@/lib/supabase/public-data";
-import { FileText, HelpCircle, BookOpen, CheckSquare, Download, ArrowLeft, Brain, ExternalLink, Eye } from "lucide-react";
+import { FileText, ArrowLeft } from "lucide-react";
 import { Metadata } from "next";
+import { ChapterNotesClient } from "@/components/pdf-viewer/chapter-notes-client";
 
 interface ChapterPageProps {
   params: Promise<{ subject: string; chapter: string }>;
@@ -108,21 +109,6 @@ const colorMap: Record<string, { bg: string; text: string; light: string; gradie
   hindi: { bg: "bg-pink-500", text: "text-pink-600", light: "bg-pink-50", gradient: "from-pink-500 to-rose-600" },
 };
 
-const noteTypeIcons: Record<string, typeof FileText> = {
-  notes: FileText,
-  important_questions: HelpCircle,
-  mcqs: CheckSquare,
-  summary: BookOpen,
-  mind_map: Brain,
-};
-
-const noteTypeLabels: Record<string, string> = {
-  notes: 'Notes PDF',
-  important_questions: 'Important Questions',
-  mcqs: 'MCQs',
-  summary: 'Summary',
-  mind_map: 'Mind Map',
-};
 
 function generateChapterJsonLd(subjectName: string, chapterTitle: string, chapterNumber: number) {
   return {
@@ -214,60 +200,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           <>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Free Study Resources - Download PDF</h2>
             
-            <div className="space-y-8">
-              {(Object.entries(notesByType) as [string, typeof notes][]).map(([type, typeNotes]) => {
-                const Icon = noteTypeIcons[type] || FileText;
-                const label = noteTypeLabels[type] || type;
-
-                return (
-                  <div key={type}>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                      <Icon className={`h-5 w-5 ${colors.text}`} />
-                      {label}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {typeNotes.map((note) => (
-                        <Card key={note.id} className="card-hover border-0 shadow-lg">
-                          <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between">
-                              <div className={`w-12 h-12 rounded-lg ${colors.light} flex items-center justify-center`}>
-                                <Icon className={`h-6 w-6 ${colors.text}`} />
-                              </div>
-                              <Badge variant="secondary">{label}</Badge>
-                            </div>
-                            <CardTitle className="text-lg mt-4">{note.title}</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-4 w-4" />
-                                <span>{note.views} views</span>
-                              </div>
-                              {note.file_name && (
-                                <span className="truncate">{note.file_name}</span>
-                              )}
-                            </div>
-                            {note.file_url ? (
-                              <a href={note.file_url} target="_blank" rel="noopener noreferrer">
-                                <Button className="w-full gap-2">
-                                  <Download className="h-4 w-4" />
-                                  Download Free PDF
-                                </Button>
-                              </a>
-                            ) : (
-                              <Button className="w-full gap-2" disabled>
-                                <ExternalLink className="h-4 w-4" />
-                                Coming Soon
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <ChapterNotesClient notesByType={notesByType} colors={colors} />
           </>
         )}
 
