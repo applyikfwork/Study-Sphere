@@ -440,7 +440,7 @@ export default function AboutPage() {
             "@type": "EducationalOrganization",
             "name": "Online School",
             "description": "India's trusted Class 10 learning platform. Free notes, NCERT solutions, PYQs, sample papers, and study tools for CBSE Board Exams.",
-            "url": "https://onlineschool.com/about",
+            "url": "https://class10thpdf.vercel.app/about",
             "sameAs": [],
             "areaServed": {
               "@type": "Country",

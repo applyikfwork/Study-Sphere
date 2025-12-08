@@ -32,6 +32,7 @@ export interface Note {
   file_size: number | null
   note_type: string
   views: number
+  downloads: number
   is_published: boolean
   created_at: string
   chapters?: {
@@ -56,6 +57,7 @@ export interface SamplePaper {
   file_size: number | null
   solution_url: string | null
   views: number
+  downloads: number
   is_published: boolean
   created_at: string
   subjects?: {
@@ -74,6 +76,7 @@ export interface PYQ {
   file_size: number | null
   solution_url: string | null
   views: number
+  downloads: number
   is_published: boolean
   created_at: string
   subjects?: {

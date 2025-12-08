@@ -41,6 +41,12 @@ BEGIN
     RAISE NOTICE 'Added views column to notes table';
   END IF;
 
+  -- Add downloads column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notes' AND column_name = 'downloads') THEN
+    ALTER TABLE public.notes ADD COLUMN downloads INTEGER DEFAULT 0;
+    RAISE NOTICE 'Added downloads column to notes table';
+  END IF;
+
   -- Add note_type column if it doesn't exist
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'notes' AND column_name = 'note_type') THEN
     ALTER TABLE public.notes ADD COLUMN note_type TEXT DEFAULT 'notes';
@@ -101,6 +107,12 @@ BEGIN
     RAISE NOTICE 'Added views column to sample_papers table';
   END IF;
 
+  -- Add downloads column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sample_papers' AND column_name = 'downloads') THEN
+    ALTER TABLE public.sample_papers ADD COLUMN downloads INTEGER DEFAULT 0;
+    RAISE NOTICE 'Added downloads column to sample_papers table';
+  END IF;
+
   -- Add solution_url column if it doesn't exist
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'sample_papers' AND column_name = 'solution_url') THEN
     ALTER TABLE public.sample_papers ADD COLUMN solution_url TEXT;
@@ -159,6 +171,12 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pyqs' AND column_name = 'views') THEN
     ALTER TABLE public.pyqs ADD COLUMN views INTEGER DEFAULT 0;
     RAISE NOTICE 'Added views column to pyqs table';
+  END IF;
+
+  -- Add downloads column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'pyqs' AND column_name = 'downloads') THEN
+    ALTER TABLE public.pyqs ADD COLUMN downloads INTEGER DEFAULT 0;
+    RAISE NOTICE 'Added downloads column to pyqs table';
   END IF;
 
   -- Add solution_url column if it doesn't exist

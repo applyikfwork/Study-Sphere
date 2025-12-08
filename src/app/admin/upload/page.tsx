@@ -28,6 +28,8 @@ export default function UploadPage() {
   const [chapterId, setChapterId] = useState("");
   const [title, setTitle] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [fakeViews, setFakeViews] = useState("0");
+  const [fakeDownloads, setFakeDownloads] = useState("0");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -126,6 +128,8 @@ export default function UploadPage() {
       formData.append('chapterId', chapterId);
       formData.append('title', title);
       formData.append('year', year);
+      formData.append('fakeViews', fakeViews);
+      formData.append('fakeDownloads', fakeDownloads);
       formData.append('file', file);
 
       const result = await uploadContent(formData);
@@ -137,6 +141,8 @@ export default function UploadPage() {
           setTitle("");
           setFile(null);
           setChapterId("");
+          setFakeViews("0");
+          setFakeDownloads("0");
         }, 3000);
       } else {
         setError(result.error || "Upload failed");
@@ -318,6 +324,31 @@ export default function UploadPage() {
                     onChange={(e) => setTitle(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Initial View Count</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={fakeViews}
+                      onChange={(e) => setFakeViews(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500">Set initial view count for this content</p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Initial Download Count</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={fakeDownloads}
+                      onChange={(e) => setFakeDownloads(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500">Set initial download count for this content</p>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

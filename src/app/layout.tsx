@@ -17,7 +17,12 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"),
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
   title: {
     default: "Class 10 Notes PDF Free Download 2025 - CBSE NCERT Solutions, Sample Papers, PYQs | Online School",
     template: "%s | Online School - Class 10 CBSE Study Material",
@@ -171,7 +176,7 @@ export const metadata: Metadata = {
     siteName: "Online School",
     title: "Class 10 Notes PDF Free Download 2025 - CBSE NCERT Solutions | Online School",
     description: "Free Class 10 notes PDF for CBSE Board Exam 2025. Chapter-wise NCERT solutions, sample papers, PYQs, important questions for Science, Maths, SST, English, Hindi.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app",
   },
   twitter: {
     card: "summary_large_image",
@@ -180,12 +185,12 @@ export const metadata: Metadata = {
     creator: "@onlineschool",
   },
   verification: {
-    google: "google-site-verification-code",
+    google: "7pxorf98n9AhHb0Lkr-wpAQEbjvxNykqRjx0BU--Bp4",
   },
   category: "education",
   classification: "Educational Website",
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com",
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app",
   },
   other: {
     "theme-color": "#3b82f6",
@@ -200,35 +205,35 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"}/#organization`,
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"}/#organization`,
       name: "Online School",
-      url: process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app",
       description: "India's fastest notes library for Class 10 CBSE students. Free notes, sample papers, PYQs, and study materials.",
       sameAs: [],
     },
     {
       "@type": "WebSite",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"}/#website`,
-      url: process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com",
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"}/#website`,
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app",
       name: "Online School",
       description: "Free Class 10 CBSE notes, sample papers, PYQs, NCERT solutions for Board Exam 2025",
       publisher: {
-        "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"}/#organization`,
+        "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"}/#organization`,
       },
       potentialAction: {
         "@type": "SearchAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"}/search?q={search_term_string}`,
+          urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"}/search?q={search_term_string}`,
         },
         "query-input": "required name=search_term_string",
       },
     },
     {
       "@type": "EducationalOrganization",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"}/#educationalOrganization`,
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"}/#educationalOrganization`,
       name: "Online School",
-      url: process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app",
       description: "Online education platform providing free study materials for Class 10 CBSE students",
       educationalCredentialAwarded: "Class 10 Board Exam Preparation",
       hasCredential: "CBSE Class 10 Study Material Provider",
@@ -248,7 +253,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <link rel="canonical" href={process.env.NEXT_PUBLIC_SITE_URL || "https://onlineschool.com"} />
+        <link rel="canonical" href={process.env.NEXT_PUBLIC_SITE_URL || "https://class10thpdf.vercel.app"} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}

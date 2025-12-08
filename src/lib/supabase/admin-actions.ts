@@ -49,6 +49,8 @@ export async function uploadContent(formData: FormData) {
   const chapterId = formData.get('chapterId') as string
   const title = formData.get('title') as string
   const year = formData.get('year') as string
+  const fakeViews = parseInt(formData.get('fakeViews') as string) || 0
+  const fakeDownloads = parseInt(formData.get('fakeDownloads') as string) || 0
   const file = formData.get('file') as File
 
   if (!title || !file) {
@@ -111,7 +113,8 @@ export async function uploadContent(formData: FormData) {
           file_size: file.size,
           note_type: contentType,
           is_published: true,
-          views: 0
+          views: fakeViews,
+          downloads: fakeDownloads
         })
       
       dbError = error
@@ -131,7 +134,8 @@ export async function uploadContent(formData: FormData) {
           file_name: file.name,
           file_size: file.size,
           is_published: true,
-          views: 0
+          views: fakeViews,
+          downloads: fakeDownloads
         })
       
       dbError = error
@@ -151,7 +155,8 @@ export async function uploadContent(formData: FormData) {
           file_name: file.name,
           file_size: file.size,
           is_published: true,
-          views: 0
+          views: fakeViews,
+          downloads: fakeDownloads
         })
       
       dbError = error
