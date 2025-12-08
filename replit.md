@@ -31,7 +31,8 @@ src/
 │   ├── profile/page.tsx      # User profile
 │   ├── admin/
 │   │   ├── page.tsx          # Admin dashboard with real-time stats
-│   │   ├── upload/page.tsx   # Content upload to Supabase
+│   │   ├── upload/page.tsx   # Single content upload to Supabase
+│   │   ├── bulk-upload/page.tsx # Bulk upload multiple files at once
 │   │   ├── content/page.tsx  # Content management (CRUD)
 │   │   ├── users/page.tsx    # User management
 │   │   ├── settings/page.tsx # Site settings
@@ -76,10 +77,11 @@ src/
 
 ### Admin Panel Features
 1. **Real-time Dashboard**: Live statistics (students, notes, views, etc.)
-2. **Content Upload**: Upload files directly to Supabase Storage
-3. **Content Management**: View, edit, delete, publish/unpublish content
-4. **User Management**: View users, change roles (admin/student), activate/deactivate
-5. **Site Settings**: Logo upload and site configuration
+2. **Single Upload**: Upload individual files directly to Supabase Storage
+3. **Bulk Upload**: Upload multiple files at once with per-file titles and view/download counts
+4. **Content Management**: View, edit, delete, publish/unpublish content
+5. **User Management**: View users, change roles (admin/student), activate/deactivate
+6. **Site Settings**: Logo upload and site configuration
 
 ## IMPORTANT: Supabase Setup
 
@@ -186,6 +188,7 @@ The Google Search Console verification code has been added:
 - Submit sitemap: `https://class10thpdf.vercel.app/sitemap.xml`
 
 ## Recent Changes
+- **Dec 2024**: Added bulk upload feature at /admin/bulk-upload for uploading multiple files at once with individual titles and view/download counts
 - **Dec 2024**: Enhanced PDF viewer with book view mode (two-page spread), virtualized thumbnails sidebar, and keyboard shortcuts (B for book view, T for thumbnails, Home/End for first/last page)
 - **Dec 2024**: Improved logo handling with graceful fallback to default GraduationCap icon when custom logo unavailable
 - **Dec 2024**: Enhanced hamburger menu with smooth animations, slide-in panel, overlay, and keyboard accessibility (Escape to close)
