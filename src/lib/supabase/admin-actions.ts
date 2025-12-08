@@ -37,31 +37,30 @@ export async function checkAdminAccess() {
 }
 
 export async function uploadContent(formData: FormData) {
-  const { isAdmin, userId, error: authError } = await checkAdminAccess()
-  if (!isAdmin) {
-    return { success: false, error: authError || 'Not authorized' }
-  }
-
-  const supabase = await createClient()
-  
-  const contentType = formData.get('contentType') as string
-  const subjectId = formData.get('subjectId') as string
-  const chapterId = formData.get('chapterId') as string
-  const title = formData.get('title') as string
-  const year = formData.get('year') as string
-  const fakeViews = parseInt(formData.get('fakeViews') as string) || 0
-  const fakeDownloads = parseInt(formData.get('fakeDownloads') as string) || 0
-  const file = formData.get('file') as File
-
-  if (!title || !file) {
-    return { success: false, error: 'Title and file are required' }
-  }
-
-  if (!contentType) {
-    return { success: false, error: 'Content type is required' }
-  }
-
   try {
+    const { isAdmin, userId, error: authError } = await checkAdminAccess()
+    if (!isAdmin) {
+      return { success: false, error: authError || 'Not authorized' }
+    }
+
+    const supabase = await createClient()
+    
+    const contentType = formData.get('contentType') as string
+    const subjectId = formData.get('subjectId') as string
+    const chapterId = formData.get('chapterId') as string
+    const title = formData.get('title') as string
+    const year = formData.get('year') as string
+    const fakeViews = parseInt(formData.get('fakeViews') as string) || 0
+    const fakeDownloads = parseInt(formData.get('fakeDownloads') as string) || 0
+    const file = formData.get('file') as File
+
+    if (!title || !file) {
+      return { success: false, error: 'Title and file are required' }
+    }
+
+    if (!contentType) {
+      return { success: false, error: 'Content type is required' }
+    }
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf'
     const timestamp = Date.now()
     const randomStr = Math.random().toString(36).substring(2, 9)
