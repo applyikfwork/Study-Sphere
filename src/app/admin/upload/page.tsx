@@ -134,6 +134,11 @@ export default function UploadPage() {
 
       const result = await uploadContent(formData);
       
+      if (!result) {
+        setError("Server error: No response from upload service. Please check your Supabase configuration.");
+        return;
+      }
+      
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
