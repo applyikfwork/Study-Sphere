@@ -38,7 +38,11 @@ export async function createClientSafe() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+  console.log('[DEBUG] SUPABASE_URL exists:', !!supabaseUrl)
+  console.log('[DEBUG] SUPABASE_ANON_KEY exists:', !!supabaseAnonKey)
+
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.log('[DEBUG] Missing Supabase config - returning null')
     return null
   }
 

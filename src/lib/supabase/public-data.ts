@@ -88,21 +88,26 @@ export interface PYQ {
 export async function getPublicSubjects(): Promise<Subject[]> {
   try {
     const supabase = await createClientSafe()
-    if (!supabase) return []
+    if (!supabase) {
+      console.log('[DEBUG] Supabase client is null - check environment variables')
+      return []
+    }
     
+    console.log('[DEBUG] Fetching subjects from Supabase...')
     const { data, error } = await supabase
       .from('subjects')
       .select('*')
       .order('order_index')
     
     if (error) {
-      console.error('Error fetching subjects:', error)
+      console.error('[DEBUG] Error fetching subjects:', error.message, error.code)
       return []
     }
     
+    console.log('[DEBUG] Subjects fetched:', data?.length || 0, 'items')
     return data || []
   } catch (err) {
-    console.error('Error in getPublicSubjects:', err)
+    console.error('[DEBUG] Exception in getPublicSubjects:', err)
     return []
   }
 }
