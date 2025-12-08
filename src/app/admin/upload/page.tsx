@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, Upload, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
-import { uploadContent, getSubjects, getChaptersBySubject } from "@/lib/supabase/admin-actions";
+import { getSubjects, getChaptersBySubject } from "@/lib/supabase/admin-actions";
 
 interface Subject {
   id: string;
@@ -132,7 +132,12 @@ export default function UploadPage() {
       formData.append('fakeDownloads', fakeDownloads);
       formData.append('file', file);
 
-      const result = await uploadContent(formData);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
       
       if (!result) {
         setError("Server error: No response from upload service. Please check your Supabase configuration.");
