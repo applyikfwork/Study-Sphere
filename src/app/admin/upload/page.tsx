@@ -149,7 +149,8 @@ export default function UploadPage() {
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setError("An error occurred during upload");
+      const errorMessage = err instanceof Error ? err.message : "An error occurred during upload";
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -220,9 +221,19 @@ export default function UploadPage() {
                           Tip: Go to Supabase Dashboard &gt; SQL Editor and run the supabase-add-columns.sql script, then reload schema in Project Settings &gt; API.
                         </p>
                       )}
-                      {error.includes('bucket') && (
+                      {(error.includes('bucket') || error.includes('not found') || error.includes('Bucket not found')) && (
                         <p className="text-xs mt-2 text-red-600">
                           Tip: Go to Supabase Dashboard &gt; Storage and create a new public bucket named &quot;content-files&quot;.
+                        </p>
+                      )}
+                      {(error.includes('policy') || error.includes('denied') || error.includes('permission') || error.includes('violates row-level security')) && (
+                        <p className="text-xs mt-2 text-red-600">
+                          Tip: Go to Supabase Dashboard &gt; SQL Editor and run the supabase-fix-policies.sql script to fix storage permissions.
+                        </p>
+                      )}
+                      {error.includes('Not authorized') && (
+                        <p className="text-xs mt-2 text-red-600">
+                          Tip: Make sure you are logged in with an admin account. Check your profile role in Supabase Dashboard &gt; Table Editor &gt; profiles.
                         </p>
                       )}
                     </div>
