@@ -24,7 +24,6 @@ export function Header() {
   const [loading, setLoading] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [logoFetched, setLogoFetched] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const router = useRouter();
 
@@ -58,8 +57,6 @@ export function Header() {
         }
       } catch (err) {
         console.error("Error fetching logo:", err);
-      } finally {
-        setLogoFetched(true);
       }
     };
     fetchLogo();
