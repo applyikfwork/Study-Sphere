@@ -2,13 +2,11 @@
 
 import { createClient } from './server'
 import { revalidatePath } from 'next/cache'
-import { SupabaseClient } from '@supabase/supabase-js'
 
 export async function checkAdminAccess(): Promise<{ 
   isAdmin: boolean; 
   userId?: string; 
   error: string | null;
-  supabase?: SupabaseClient;
 }> {
   try {
     const supabase = await createClient()
@@ -38,8 +36,7 @@ export async function checkAdminAccess(): Promise<{
     return { 
       isAdmin, 
       userId: user.id, 
-      error: isAdmin ? null : 'Not authorized. Admin access required.',
-      supabase: isAdmin ? supabase : undefined
+      error: isAdmin ? null : 'Not authorized. Admin access required.'
     }
   } catch (err) {
     console.error('Admin access check error:', err)
@@ -48,10 +45,23 @@ export async function checkAdminAccess(): Promise<{
 }
 
 export async function uploadContent(formData: FormData): Promise<{ success: boolean; error?: string }> {
+  console.log('[uploadContent] Starting upload...')
+  
   try {
-    const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
-    if (!isAdmin || !supabase) {
+    const { isAdmin, userId, error: authError } = await checkAdminAccess()
+    console.log('[uploadContent] Admin check result:', { isAdmin, userId, authError })
+    
+    if (!isAdmin) {
       return { success: false, error: authError || 'Not authorized' }
+    }
+
+    let supabase
+    try {
+      supabase = await createClient()
+      console.log('[uploadContent] Supabase client created successfully')
+    } catch (clientErr) {
+      console.error('[uploadContent] Failed to create Supabase client:', clientErr)
+      return { success: false, error: 'Failed to connect to Supabase. Please check your configuration.' }
     }
     
     const contentType = formData.get('contentType') as string
@@ -75,9 +85,12 @@ export async function uploadContent(formData: FormData): Promise<{ success: bool
     const randomStr = Math.random().toString(36).substring(2, 9)
     const fileName = `${contentType}/${timestamp}-${randomStr}.${fileExt}`
 
+    console.log('[uploadContent] Preparing file for upload:', { fileName, fileType: file.type, fileSize: file.size })
+    
     const arrayBuffer = await file.arrayBuffer()
     const fileBuffer = new Uint8Array(arrayBuffer)
 
+    console.log('[uploadContent] Uploading to Supabase Storage...')
     const { error: uploadError } = await supabase.storage
       .from('content-files')
       .upload(fileName, fileBuffer, {
@@ -87,7 +100,7 @@ export async function uploadContent(formData: FormData): Promise<{ success: bool
       })
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError)
+      console.error('[uploadContent] Storage upload error:', uploadError)
       if (uploadError.message.includes('bucket') || uploadError.message.includes('not found')) {
         return { success: false, error: 'Storage bucket "content-files" not found. Please create it in Supabase Storage.' }
       }
@@ -209,19 +222,22 @@ export async function uploadContent(formData: FormData): Promise<{ success: bool
     revalidatePath('/sample-papers')
     revalidatePath('/pyqs')
     
+    console.log('[uploadContent] Upload successful!')
     return { success: true }
   } catch (err) {
-    console.error('Upload error:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    console.error('[uploadContent] Unhandled error:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
     return { success: false, error: 'Failed to upload content: ' + errorMessage }
   }
 }
 
 export async function deleteContent(contentType: string, id: string): Promise<{ success: boolean; error?: string | null }> {
-  const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
-  if (!isAdmin || !supabase) {
+  const { isAdmin, userId, error: authError } = await checkAdminAccess()
+  if (!isAdmin) {
     return { success: false, error: authError }
   }
+
+  const supabase = await createClient()
   
   try {
     let tableName: string
@@ -276,10 +292,12 @@ export async function deleteContent(contentType: string, id: string): Promise<{ 
 }
 
 export async function updateContent(contentType: string, id: string, data: Record<string, string | number | boolean>): Promise<{ success: boolean; error?: string | null }> {
-  const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
-  if (!isAdmin || !supabase) {
+  const { isAdmin, userId, error: authError } = await checkAdminAccess()
+  if (!isAdmin) {
     return { success: false, error: authError }
   }
+
+  const supabase = await createClient()
   
   try {
     let tableName: string
@@ -327,10 +345,12 @@ export async function updateContent(contentType: string, id: string, data: Recor
 }
 
 export async function updateUserRole(userId: string, newRole: 'student' | 'admin'): Promise<{ success: boolean; error?: string | null }> {
-  const { isAdmin, userId: adminId, error: authError, supabase } = await checkAdminAccess()
-  if (!isAdmin || !supabase) {
+  const { isAdmin, userId: adminId, error: authError } = await checkAdminAccess()
+  if (!isAdmin) {
     return { success: false, error: authError }
   }
+
+  const supabase = await createClient()
   
   try {
     const { data: targetUser } = await supabase
@@ -373,10 +393,12 @@ export async function updateUserRole(userId: string, newRole: 'student' | 'admin
 }
 
 export async function toggleUserStatus(userId: string, isActive: boolean): Promise<{ success: boolean; error?: string | null }> {
-  const { isAdmin, userId: adminId, error: authError, supabase } = await checkAdminAccess()
-  if (!isAdmin || !supabase) {
+  const { isAdmin, userId: adminId, error: authError } = await checkAdminAccess()
+  if (!isAdmin) {
     return { success: false, error: authError }
   }
+
+  const supabase = await createClient()
   
   try {
     const { data: targetUser } = await supabase
@@ -451,10 +473,12 @@ export async function getChaptersBySubject(subjectId: string) {
 
 export async function bulkUploadContent(formData: FormData): Promise<{ success: boolean; error?: string; results: { id: string; success: boolean; error?: string }[]; message?: string }> {
   try {
-    const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
-    if (!isAdmin || !supabase) {
+    const { isAdmin, userId, error: authError } = await checkAdminAccess()
+    if (!isAdmin) {
       return { success: false, error: authError || 'Not authorized', results: [] }
     }
+
+    const supabase = await createClient()
     
     const contentType = formData.get('contentType') as string
     const subjectId = formData.get('subjectId') as string
