@@ -15,7 +15,7 @@ const navigation = [
   { name: "Notes", href: "/notes" },
   { name: "PYQs", href: "/pyqs" },
   { name: "Sample Papers", href: "/sample-papers" },
-  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export function Header() {
