@@ -2,8 +2,14 @@
 
 import { createClient } from './server'
 import { revalidatePath } from 'next/cache'
+import { SupabaseClient } from '@supabase/supabase-js'
 
-export async function checkAdminAccess() {
+export async function checkAdminAccess(): Promise<{ 
+  isAdmin: boolean; 
+  userId?: string; 
+  error: string | null;
+  supabase?: SupabaseClient;
+}> {
   try {
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -29,21 +35,24 @@ export async function checkAdminAccess() {
 
     const isAdmin = profile?.role === 'admin' || user.email === 'xyzapplywork@gmail.com'
     
-    return { isAdmin, userId: user.id, error: isAdmin ? null : 'Not authorized. Admin access required.' }
+    return { 
+      isAdmin, 
+      userId: user.id, 
+      error: isAdmin ? null : 'Not authorized. Admin access required.',
+      supabase: isAdmin ? supabase : undefined
+    }
   } catch (err) {
     console.error('Admin access check error:', err)
     return { isAdmin: false, error: 'Failed to verify admin access' }
   }
 }
 
-export async function uploadContent(formData: FormData) {
+export async function uploadContent(formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
-    const { isAdmin, userId, error: authError } = await checkAdminAccess()
-    if (!isAdmin) {
+    const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
+    if (!isAdmin || !supabase) {
       return { success: false, error: authError || 'Not authorized' }
     }
-
-    const supabase = await createClient()
     
     const contentType = formData.get('contentType') as string
     const subjectId = formData.get('subjectId') as string
@@ -208,13 +217,11 @@ export async function uploadContent(formData: FormData) {
   }
 }
 
-export async function deleteContent(contentType: string, id: string) {
-  const { isAdmin, userId, error: authError } = await checkAdminAccess()
-  if (!isAdmin) {
+export async function deleteContent(contentType: string, id: string): Promise<{ success: boolean; error?: string | null }> {
+  const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
+  if (!isAdmin || !supabase) {
     return { success: false, error: authError }
   }
-
-  const supabase = await createClient()
   
   try {
     let tableName: string
@@ -268,13 +275,11 @@ export async function deleteContent(contentType: string, id: string) {
   }
 }
 
-export async function updateContent(contentType: string, id: string, data: Record<string, string | number | boolean>) {
-  const { isAdmin, userId, error: authError } = await checkAdminAccess()
-  if (!isAdmin) {
+export async function updateContent(contentType: string, id: string, data: Record<string, string | number | boolean>): Promise<{ success: boolean; error?: string | null }> {
+  const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
+  if (!isAdmin || !supabase) {
     return { success: false, error: authError }
   }
-
-  const supabase = await createClient()
   
   try {
     let tableName: string
@@ -321,13 +326,11 @@ export async function updateContent(contentType: string, id: string, data: Recor
   }
 }
 
-export async function updateUserRole(userId: string, newRole: 'student' | 'admin') {
-  const { isAdmin, userId: adminId, error: authError } = await checkAdminAccess()
-  if (!isAdmin) {
+export async function updateUserRole(userId: string, newRole: 'student' | 'admin'): Promise<{ success: boolean; error?: string | null }> {
+  const { isAdmin, userId: adminId, error: authError, supabase } = await checkAdminAccess()
+  if (!isAdmin || !supabase) {
     return { success: false, error: authError }
   }
-
-  const supabase = await createClient()
   
   try {
     const { data: targetUser } = await supabase
@@ -369,13 +372,11 @@ export async function updateUserRole(userId: string, newRole: 'student' | 'admin
   }
 }
 
-export async function toggleUserStatus(userId: string, isActive: boolean) {
-  const { isAdmin, userId: adminId, error: authError } = await checkAdminAccess()
-  if (!isAdmin) {
+export async function toggleUserStatus(userId: string, isActive: boolean): Promise<{ success: boolean; error?: string | null }> {
+  const { isAdmin, userId: adminId, error: authError, supabase } = await checkAdminAccess()
+  if (!isAdmin || !supabase) {
     return { success: false, error: authError }
   }
-
-  const supabase = await createClient()
   
   try {
     const { data: targetUser } = await supabase
@@ -448,14 +449,12 @@ export async function getChaptersBySubject(subjectId: string) {
   return data
 }
 
-export async function bulkUploadContent(formData: FormData) {
+export async function bulkUploadContent(formData: FormData): Promise<{ success: boolean; error?: string; results: { id: string; success: boolean; error?: string }[]; message?: string }> {
   try {
-    const { isAdmin, userId, error: authError } = await checkAdminAccess()
-    if (!isAdmin) {
+    const { isAdmin, userId, error: authError, supabase } = await checkAdminAccess()
+    if (!isAdmin || !supabase) {
       return { success: false, error: authError || 'Not authorized', results: [] }
     }
-
-    const supabase = await createClient()
     
     const contentType = formData.get('contentType') as string
     const subjectId = formData.get('subjectId') as string
