@@ -186,6 +186,11 @@ The Google Search Console verification code has been added:
 - Submit sitemap: `https://class10thpdf.vercel.app/sitemap.xml`
 
 ## Recent Changes
+- **Dec 2024**: Enhanced PDF viewer with book view mode (two-page spread), virtualized thumbnails sidebar, and keyboard shortcuts (B for book view, T for thumbnails, Home/End for first/last page)
+- **Dec 2024**: Improved logo handling with graceful fallback to default GraduationCap icon when custom logo unavailable
+- **Dec 2024**: Enhanced hamburger menu with smooth animations, slide-in panel, overlay, and keyboard accessibility (Escape to close)
+- **Dec 2024**: Fixed PDF viewer performance - thumbnails now use single Document instance with virtualization to prevent excessive memory usage on large PDFs
+- **Dec 2024**: Added grid.svg asset to resolve 404 errors
 - **Dec 2024**: Added in-app PDF viewer with zoom, page navigation, fullscreen, and responsive design
 - **Dec 2024**: Updated chapter notes, sample papers, and PYQs pages to use the new PDF viewer
 - **Dec 2024**: Added Google Search Console verification meta tag
