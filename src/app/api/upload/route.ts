@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
     const year = formData.get('year') as string
     const fakeViews = parseInt(formData.get('fakeViews') as string) || 0
     const fakeDownloads = parseInt(formData.get('fakeDownloads') as string) || 0
-    const file = formData.get('file') as File
+    const uploadMethod = formData.get('uploadMethod') as string || 'file'
 
-    if (!title || !file) {
+    if (!title) {
       return NextResponse.json(
-        { success: false, error: 'Title and file are required' },
+        { success: false, error: 'Title is required' },
         { status: 400 }
       )
     }
@@ -63,58 +63,97 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[API Upload] Processing file:', { 
-      fileName: file.name, 
-      fileType: file.type, 
-      fileSize: file.size,
-      contentType 
-    })
+    let fileUrl: string
+    let originalFileName: string
+    let fileSize: number = 0
 
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf'
-    const timestamp = Date.now()
-    const randomStr = Math.random().toString(36).substring(2, 9)
-    const fileName = `${contentType}/${timestamp}-${randomStr}.${fileExt}`
+    if (uploadMethod === 'link') {
+      const supabaseLink = formData.get('supabaseLink') as string
+      const fileName = formData.get('fileName') as string
 
-    const arrayBuffer = await file.arrayBuffer()
-    const fileBuffer = new Uint8Array(arrayBuffer)
+      if (!supabaseLink || !fileName) {
+        return NextResponse.json(
+          { success: false, error: 'Supabase link and file name are required' },
+          { status: 400 }
+        )
+      }
 
-    console.log('[API Upload] Uploading to Supabase Storage...')
-    
-    const { error: uploadError } = await supabase.storage
-      .from('content-files')
-      .upload(fileName, fileBuffer, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || 'application/pdf'
+      if (!supabaseLink.includes('supabase') || !supabaseLink.startsWith('http')) {
+        return NextResponse.json(
+          { success: false, error: 'Please provide a valid Supabase storage URL' },
+          { status: 400 }
+        )
+      }
+
+      console.log('[API Upload] Using provided Supabase link:', supabaseLink)
+      fileUrl = supabaseLink.trim()
+      originalFileName = fileName.trim()
+      fileSize = 0
+    } else {
+      const file = formData.get('file') as File
+
+      if (!file) {
+        return NextResponse.json(
+          { success: false, error: 'File is required' },
+          { status: 400 }
+        )
+      }
+
+      console.log('[API Upload] Processing file:', { 
+        fileName: file.name, 
+        fileType: file.type, 
+        fileSize: file.size,
+        contentType 
       })
 
-    if (uploadError) {
-      console.error('[API Upload] Storage upload error:', uploadError)
-      if (uploadError.message.includes('bucket') || uploadError.message.includes('not found')) {
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf'
+      const timestamp = Date.now()
+      const randomStr = Math.random().toString(36).substring(2, 9)
+      const storagePath = `${contentType}/${timestamp}-${randomStr}.${fileExt}`
+
+      const arrayBuffer = await file.arrayBuffer()
+      const fileBuffer = new Uint8Array(arrayBuffer)
+
+      console.log('[API Upload] Uploading to Supabase Storage...')
+      
+      const { error: uploadError } = await supabase.storage
+        .from('content-files')
+        .upload(storagePath, fileBuffer, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type || 'application/pdf'
+        })
+
+      if (uploadError) {
+        console.error('[API Upload] Storage upload error:', uploadError)
+        if (uploadError.message.includes('bucket') || uploadError.message.includes('not found')) {
+          return NextResponse.json(
+            { success: false, error: 'Storage bucket "content-files" not found. Please create it in Supabase Storage.' },
+            { status: 500 }
+          )
+        }
+        if (uploadError.message.includes('policy')) {
+          return NextResponse.json(
+            { success: false, error: 'Storage permission denied. Please check your Supabase storage policies.' },
+            { status: 500 }
+          )
+        }
         return NextResponse.json(
-          { success: false, error: 'Storage bucket "content-files" not found. Please create it in Supabase Storage.' },
+          { success: false, error: 'File upload failed: ' + uploadError.message },
           { status: 500 }
         )
       }
-      if (uploadError.message.includes('policy')) {
-        return NextResponse.json(
-          { success: false, error: 'Storage permission denied. Please check your Supabase storage policies.' },
-          { status: 500 }
-        )
-      }
-      return NextResponse.json(
-        { success: false, error: 'File upload failed: ' + uploadError.message },
-        { status: 500 }
-      )
+
+      console.log('[API Upload] File uploaded to storage successfully')
+
+      const { data: urlData } = supabase.storage
+        .from('content-files')
+        .getPublicUrl(storagePath)
+
+      fileUrl = urlData.publicUrl
+      originalFileName = file.name
+      fileSize = file.size
     }
-
-    console.log('[API Upload] File uploaded to storage successfully')
-
-    const { data: urlData } = supabase.storage
-      .from('content-files')
-      .getPublicUrl(fileName)
-
-    const fileUrl = urlData.publicUrl
 
     let dbError = null
     let errorDetails = ''
@@ -133,8 +172,8 @@ export async function POST(request: NextRequest) {
           chapter_id: chapterId,
           title,
           file_url: fileUrl,
-          file_name: file.name,
-          file_size: file.size,
+          file_name: originalFileName,
+          file_size: fileSize,
           note_type: contentType,
           is_published: true,
           views: fakeViews,
@@ -158,8 +197,8 @@ export async function POST(request: NextRequest) {
           title,
           year: parseInt(year),
           file_url: fileUrl,
-          file_name: file.name,
-          file_size: file.size,
+          file_name: originalFileName,
+          file_size: fileSize,
           is_published: true,
           views: fakeViews,
           downloads: fakeDownloads
@@ -182,8 +221,8 @@ export async function POST(request: NextRequest) {
           title,
           year: parseInt(year),
           file_url: fileUrl,
-          file_name: file.name,
-          file_size: file.size,
+          file_name: originalFileName,
+          file_size: fileSize,
           is_published: true,
           views: fakeViews,
           downloads: fakeDownloads
@@ -232,7 +271,11 @@ export async function POST(request: NextRequest) {
           action: 'upload',
           entity_type: contentType,
           entity_title: title,
-          details: { file_name: file.name, file_size: file.size }
+          details: { 
+            file_name: originalFileName, 
+            file_size: fileSize,
+            upload_method: uploadMethod
+          }
         })
     } catch {
     }

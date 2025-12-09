@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Upload, FileText, Check, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Check, AlertCircle, Loader2, Link as LinkIcon } from "lucide-react";
 import { getSubjects, getChaptersBySubject } from "@/lib/supabase/admin-actions";
 
 interface Subject {
@@ -34,6 +34,10 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const [uploadMethod, setUploadMethod] = useState<"file" | "link">("file");
+  const [supabaseLink, setSupabaseLink] = useState("");
+  const [fileName, setFileName] = useState("");
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -98,9 +102,24 @@ export default function UploadPage() {
       return;
     }
     
-    if (!file) {
+    if (uploadMethod === "file" && !file) {
       setError("Please select a file to upload");
       return;
+    }
+
+    if (uploadMethod === "link") {
+      if (!supabaseLink.trim()) {
+        setError("Please enter the Supabase storage link");
+        return;
+      }
+      if (!supabaseLink.includes('supabase') || !supabaseLink.startsWith('http')) {
+        setError("Please enter a valid Supabase storage URL");
+        return;
+      }
+      if (!fileName.trim()) {
+        setError("Please enter the file name");
+        return;
+      }
     }
 
     if (needsChapter) {
@@ -130,7 +149,14 @@ export default function UploadPage() {
       formData.append('year', year);
       formData.append('fakeViews', fakeViews);
       formData.append('fakeDownloads', fakeDownloads);
-      formData.append('file', file);
+      formData.append('uploadMethod', uploadMethod);
+
+      if (uploadMethod === "file" && file) {
+        formData.append('file', file);
+      } else if (uploadMethod === "link") {
+        formData.append('supabaseLink', supabaseLink);
+        formData.append('fileName', fileName);
+      }
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -140,7 +166,7 @@ export default function UploadPage() {
       if (!response.ok) {
         const text = await response.text();
         if (text.includes('Request Entity Too Large') || text.includes('413')) {
-          setError("File is too large. Maximum file size is 4.5MB for deployed version.");
+          setError("File is too large. Maximum file size is 4MB. Use 'Paste Supabase Link' option for larger files.");
           return;
         }
         setError(`Upload failed: ${response.status} - ${text.slice(0, 100)}`);
@@ -169,6 +195,8 @@ export default function UploadPage() {
           setChapterId("");
           setFakeViews("0");
           setFakeDownloads("0");
+          setSupabaseLink("");
+          setFileName("");
         }, 3000);
       } else {
         setError(result.error || "Upload failed");
@@ -231,7 +259,7 @@ export default function UploadPage() {
             <CardHeader>
               <CardTitle>Upload New Content</CardTitle>
               <CardDescription>
-                Fill in the details and upload your file to Supabase storage
+                Upload a file directly or paste a Supabase storage link for larger files (4MB+)
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -388,46 +416,122 @@ export default function UploadPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Upload File (PDF) *</label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-primary transition-colors">
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      {file ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <FileText className="h-8 w-8 text-primary" />
-                          <span className="font-medium text-gray-900">{file.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB
-                          </span>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-600">Click to upload or drag and drop</p>
-                          <p className="text-sm text-gray-400 mt-1">PDF, DOC, DOCX, PPT, PPTX (max 10MB)</p>
-                        </>
-                      )}
-                    </label>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Upload Method</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadMethod("file");
+                          setSupabaseLink("");
+                          setFileName("");
+                        }}
+                        className={`p-4 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                          uploadMethod === "file"
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-primary"
+                        }`}
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadMethod("link");
+                          setFile(null);
+                        }}
+                        className={`p-4 rounded-lg border text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                          uploadMethod === "link"
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-primary"
+                        }`}
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                        Paste Supabase Link
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Use &quot;Paste Supabase Link&quot; for files larger than 4MB to avoid upload limits
+                    </p>
                   </div>
+
+                  {uploadMethod === "file" ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Upload File (PDF) *</label>
+                      <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-primary transition-colors">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.ppt,.pptx"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          id="file-upload"
+                        />
+                        <label htmlFor="file-upload" className="cursor-pointer">
+                          {file ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="h-8 w-8 text-primary" />
+                              <span className="font-medium text-gray-900">{file.name}</span>
+                              <span className="text-sm text-gray-500">
+                                {(file.size / (1024 * 1024)).toFixed(2)} MB
+                              </span>
+                              {file.size > 4 * 1024 * 1024 && (
+                                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                                  Warning: File is larger than 4MB. Consider using &quot;Paste Supabase Link&quot; option.
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                              <p className="text-gray-600">Click to upload or drag and drop</p>
+                              <p className="text-sm text-gray-400 mt-1">PDF, DOC, DOCX, PPT, PPTX (max 4MB recommended)</p>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Supabase Storage URL *</label>
+                        <Input
+                          type="url"
+                          placeholder="https://xxx.supabase.co/storage/v1/object/public/content-files/..."
+                          value={supabaseLink}
+                          onChange={(e) => setSupabaseLink(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-600">
+                          Upload your file to Supabase Storage directly, then paste the public URL here
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">File Name *</label>
+                        <Input
+                          type="text"
+                          placeholder="e.g., Chapter-1-Notes.pdf"
+                          value={fileName}
+                          onChange={(e) => setFileName(e.target.value)}
+                        />
+                        <p className="text-xs text-gray-600">
+                          Enter the original file name (will be shown to students)
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full" disabled={uploading}>
                   {uploading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading to Supabase...
+                      {uploadMethod === "file" ? "Uploading to Supabase..." : "Saving Content..."}
                     </>
                   ) : (
                     <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Content
+                      {uploadMethod === "file" ? <Upload className="h-4 w-4 mr-2" /> : <LinkIcon className="h-4 w-4 mr-2" />}
+                      {uploadMethod === "file" ? "Upload Content" : "Save Content with Link"}
                     </>
                   )}
                 </Button>
