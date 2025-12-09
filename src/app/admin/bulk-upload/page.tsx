@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Upload, FileText, Check, AlertCircle, Loader2, X, Files } from "lucide-react";
-import { bulkUploadContent, getSubjects, getChaptersBySubject } from "@/lib/supabase/admin-actions";
+import { ArrowLeft, Upload, FileText, Check, AlertCircle, Loader2, X, Files, Link as LinkIcon, Plus } from "lucide-react";
+import { getSubjects, getChaptersBySubject } from "@/lib/supabase/admin-actions";
 
 interface Subject {
   id: string;
@@ -22,8 +22,15 @@ interface Chapter {
 
 interface FileItem {
   id: string;
-  file: File;
+  uploadMethod: 'file' | 'link';
+  file: File | null;
+  supabaseLink: string;
+  fileName: string;
   title: string;
+  contentType: string;
+  subjectId: string;
+  chapterId: string;
+  year: string;
   status: 'pending' | 'uploading' | 'success' | 'error';
   error?: string;
   fakeViews: string;
@@ -31,21 +38,24 @@ interface FileItem {
 }
 
 export default function BulkUploadPage() {
-  const [contentType, setContentType] = useState("notes");
-  const [subjectId, setSubjectId] = useState("");
-  const [chapterId, setChapterId] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [defaultFakeViews, setDefaultFakeViews] = useState("0");
-  const [defaultFakeDownloads, setDefaultFakeDownloads] = useState("0");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [globalError, setGlobalError] = useState("");
 
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [chaptersMap, setChaptersMap] = useState<Record<string, Chapter[]>>({});
   const [loadingSubjects, setLoadingSubjects] = useState(true);
-  const [loadingChapters, setLoadingChapters] = useState(false);
+  const [loadingChapters, setLoadingChapters] = useState<Record<string, boolean>>({});
+
+  const [defaultContentType, setDefaultContentType] = useState("notes");
+  const [defaultSubjectId, setDefaultSubjectId] = useState("");
+  const [defaultChapterId, setDefaultChapterId] = useState("");
+  const [defaultYear, setDefaultYear] = useState(new Date().getFullYear().toString());
+  const [defaultFakeViews, setDefaultFakeViews] = useState("0");
+  const [defaultFakeDownloads, setDefaultFakeDownloads] = useState("0");
+  const [defaultChapters, setDefaultChapters] = useState<Chapter[]>([]);
+  const [loadingDefaultChapters, setLoadingDefaultChapters] = useState(false);
 
   const contentTypes = [
     { id: "notes", name: "Notes", needsChapter: true },
@@ -57,7 +67,7 @@ export default function BulkUploadPage() {
     { id: "pyq", name: "PYQ", needsChapter: false },
   ];
 
-  const needsChapter = contentTypes.find(t => t.id === contentType)?.needsChapter ?? true;
+  const needsChapterForType = (type: string) => contentTypes.find(t => t.id === type)?.needsChapter ?? true;
 
   useEffect(() => {
     async function loadSubjects() {
@@ -75,24 +85,39 @@ export default function BulkUploadPage() {
   }, []);
 
   useEffect(() => {
-    async function loadChapters() {
-      if (!subjectId || !needsChapter) {
-        setChapters([]);
+    async function loadDefaultChapters() {
+      if (!defaultSubjectId || !needsChapterForType(defaultContentType)) {
+        setDefaultChapters([]);
         return;
       }
       
-      setLoadingChapters(true);
+      setLoadingDefaultChapters(true);
       try {
-        const data = await getChaptersBySubject(subjectId);
-        setChapters(data);
+        const data = await getChaptersBySubject(defaultSubjectId);
+        setDefaultChapters(data);
+        setChaptersMap(prev => ({ ...prev, [defaultSubjectId]: data }));
       } catch (err) {
         console.error('Error loading chapters:', err);
       } finally {
-        setLoadingChapters(false);
+        setLoadingDefaultChapters(false);
       }
     }
-    loadChapters();
-  }, [subjectId, needsChapter]);
+    loadDefaultChapters();
+  }, [defaultSubjectId, defaultContentType]);
+
+  const loadChaptersForFile = useCallback(async (subjectId: string) => {
+    if (!subjectId || chaptersMap[subjectId]) return;
+    
+    setLoadingChapters(prev => ({ ...prev, [subjectId]: true }));
+    try {
+      const data = await getChaptersBySubject(subjectId);
+      setChaptersMap(prev => ({ ...prev, [subjectId]: data }));
+    } catch (err) {
+      console.error('Error loading chapters:', err);
+    } finally {
+      setLoadingChapters(prev => ({ ...prev, [subjectId]: false }));
+    }
+  }, [chaptersMap]);
 
   const generateTitleFromFile = (fileName: string): string => {
     const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
@@ -120,8 +145,15 @@ export default function BulkUploadPage() {
       
       newFiles.push({
         id: `${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+        uploadMethod: 'file',
         file,
+        supabaseLink: '',
+        fileName: file.name,
         title: generateTitleFromFile(file.name),
+        contentType: defaultContentType,
+        subjectId: defaultSubjectId,
+        chapterId: defaultChapterId,
+        year: defaultYear,
         status: 'pending',
         fakeViews: defaultFakeViews,
         fakeDownloads: defaultFakeDownloads,
@@ -130,26 +162,45 @@ export default function BulkUploadPage() {
 
     setFiles(prev => [...prev, ...newFiles]);
     e.target.value = '';
-  }, [defaultFakeViews, defaultFakeDownloads]);
+  }, [defaultContentType, defaultSubjectId, defaultChapterId, defaultYear, defaultFakeViews, defaultFakeDownloads]);
+
+  const addLinkItem = () => {
+    const newItem: FileItem = {
+      id: `${Date.now()}-link-${Math.random().toString(36).substr(2, 9)}`,
+      uploadMethod: 'link',
+      file: null,
+      supabaseLink: '',
+      fileName: '',
+      title: '',
+      contentType: defaultContentType,
+      subjectId: defaultSubjectId,
+      chapterId: defaultChapterId,
+      year: defaultYear,
+      status: 'pending',
+      fakeViews: defaultFakeViews,
+      fakeDownloads: defaultFakeDownloads,
+    };
+    setFiles(prev => [...prev, newItem]);
+  };
 
   const removeFile = (id: string) => {
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
-  const updateFileTitle = (id: string, title: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, title } : f));
+  const updateFile = (id: string, updates: Partial<FileItem>) => {
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
   };
 
-  const updateFileViews = (id: string, fakeViews: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, fakeViews } : f));
-  };
-
-  const updateFileDownloads = (id: string, fakeDownloads: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, fakeDownloads } : f));
-  };
-
-  const applyDefaultViewsToAll = () => {
-    setFiles(prev => prev.map(f => ({ ...f, fakeViews: defaultFakeViews, fakeDownloads: defaultFakeDownloads })));
+  const applyDefaultsToAll = () => {
+    setFiles(prev => prev.map(f => ({
+      ...f,
+      contentType: defaultContentType,
+      subjectId: defaultSubjectId,
+      chapterId: defaultChapterId,
+      year: defaultYear,
+      fakeViews: defaultFakeViews,
+      fakeDownloads: defaultFakeDownloads,
+    })));
   };
 
   const handleBulkUpload = async () => {
@@ -160,18 +211,25 @@ export default function BulkUploadPage() {
       return;
     }
 
-    if (needsChapter) {
-      if (!subjectId) {
-        setGlobalError("Please select a subject");
+    for (const f of files) {
+      if (!f.title.trim()) {
+        setGlobalError(`Please enter a title for all items`);
         return;
       }
-      if (!chapterId) {
-        setGlobalError("Please select a chapter");
+      if (f.uploadMethod === 'file' && !f.file) {
+        setGlobalError(`File is missing for item: ${f.title || 'Untitled'}`);
         return;
       }
-    } else {
-      if (!subjectId) {
-        setGlobalError("Please select a subject");
+      if (f.uploadMethod === 'link' && (!f.supabaseLink.trim() || !f.fileName.trim())) {
+        setGlobalError(`Supabase link and file name required for: ${f.title || 'Untitled'}`);
+        return;
+      }
+      if (!f.subjectId) {
+        setGlobalError(`Please select a subject for: ${f.title}`);
+        return;
+      }
+      if (needsChapterForType(f.contentType) && !f.chapterId) {
+        setGlobalError(`Please select a chapter for: ${f.title}`);
         return;
       }
     }
@@ -179,58 +237,78 @@ export default function BulkUploadPage() {
     setUploading(true);
     setFiles(prev => prev.map(f => ({ ...f, status: 'uploading' as const })));
 
-    try {
-      const formData = new FormData();
-      formData.append('contentType', contentType);
-      formData.append('subjectId', subjectId);
-      formData.append('chapterId', chapterId);
-      formData.append('year', year);
-      formData.append('fileCount', files.length.toString());
+    const results: { id: string; success: boolean; error?: string }[] = [];
 
-      files.forEach((f, index) => {
-        formData.append(`file_${index}_id`, f.id);
-        formData.append(`file_${index}`, f.file);
-        formData.append(`file_${index}_title`, f.title);
-        formData.append(`file_${index}_views`, f.fakeViews);
-        formData.append(`file_${index}_downloads`, f.fakeDownloads);
-      });
+    for (const fileItem of files) {
+      try {
+        const formData = new FormData();
+        formData.append('contentType', fileItem.contentType);
+        formData.append('subjectId', fileItem.subjectId);
+        formData.append('chapterId', fileItem.chapterId);
+        formData.append('title', fileItem.title);
+        formData.append('year', fileItem.year);
+        formData.append('fakeViews', fileItem.fakeViews);
+        formData.append('fakeDownloads', fileItem.fakeDownloads);
+        formData.append('uploadMethod', fileItem.uploadMethod);
 
-      const result = await bulkUploadContent(formData);
+        if (fileItem.uploadMethod === 'file' && fileItem.file) {
+          formData.append('file', fileItem.file);
+        } else if (fileItem.uploadMethod === 'link') {
+          formData.append('supabaseLink', fileItem.supabaseLink);
+          formData.append('fileName', fileItem.fileName);
+        }
 
-      if (!result) {
-        setGlobalError("Server error: No response from upload service");
-        setFiles(prev => prev.map(f => ({ ...f, status: 'error', error: 'Server error' })));
-        return;
-      }
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (result.results) {
-        setFiles(prev => prev.map(f => {
-          const fileResult = result.results.find((r: { id: string; success: boolean; error?: string }) => r.id === f.id);
-          if (fileResult) {
-            return {
-              ...f,
-              status: fileResult.success ? 'success' : 'error',
-              error: fileResult.error,
-            };
+        if (!response.ok) {
+          const text = await response.text();
+          if (text.includes('Request Entity Too Large') || text.includes('413')) {
+            results.push({ id: fileItem.id, success: false, error: 'File too large (max 4MB). Use Supabase link option.' });
+          } else {
+            results.push({ id: fileItem.id, success: false, error: text.slice(0, 100) });
           }
-          return f;
-        }));
-      }
+          continue;
+        }
 
-      const successCount = result.results?.filter((r: { success: boolean }) => r.success).length || 0;
-      const totalCount = files.length;
-      
-      if (successCount === totalCount) {
-        setCompleted(true);
-      }
+        let result;
+        try {
+          result = await response.json();
+        } catch {
+          results.push({ id: fileItem.id, success: false, error: 'Invalid server response' });
+          continue;
+        }
 
-    } catch (err) {
-      console.error('Bulk upload error:', err);
-      setGlobalError(err instanceof Error ? err.message : "An error occurred during upload");
-      setFiles(prev => prev.map(f => f.status === 'uploading' ? { ...f, status: 'error', error: 'Upload failed' } : f));
-    } finally {
-      setUploading(false);
+        if (result?.success) {
+          results.push({ id: fileItem.id, success: true });
+        } else {
+          results.push({ id: fileItem.id, success: false, error: result?.error || 'Upload failed' });
+        }
+      } catch (err) {
+        results.push({ id: fileItem.id, success: false, error: err instanceof Error ? err.message : 'Upload failed' });
+      }
     }
+
+    setFiles(prev => prev.map(f => {
+      const result = results.find(r => r.id === f.id);
+      if (result) {
+        return {
+          ...f,
+          status: result.success ? 'success' : 'error',
+          error: result.error,
+        };
+      }
+      return f;
+    }));
+
+    const successCount = results.filter(r => r.success).length;
+    if (successCount === files.length) {
+      setCompleted(true);
+    }
+
+    setUploading(false);
   };
 
   const resetForm = () => {
@@ -257,7 +335,7 @@ export default function BulkUploadPage() {
                 <Files className="h-6 w-6" />
                 Bulk Upload
               </h1>
-              <p className="text-gray-600">Upload multiple files at once</p>
+              <p className="text-gray-600">Upload multiple files with individual settings</p>
             </div>
             <Link href="/admin/upload">
               <Button variant="outline">Single Upload</Button>
@@ -266,7 +344,7 @@ export default function BulkUploadPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8 py-8">
         {completed ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="p-12 text-center">
@@ -275,16 +353,16 @@ export default function BulkUploadPage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Bulk Upload Complete!</h2>
               <p className="text-gray-600 mb-2">
-                Successfully uploaded {successCount} of {files.length} files.
+                Successfully uploaded {successCount} of {files.length} items.
               </p>
               {errorCount > 0 && (
                 <p className="text-red-600 mb-4">
-                  {errorCount} file(s) failed to upload.
+                  {errorCount} item(s) failed to upload.
                 </p>
               )}
               <div className="flex gap-4 justify-center mt-6">
                 <Button onClick={resetForm}>
-                  Upload More Files
+                  Upload More
                 </Button>
                 <Link href="/admin/content">
                   <Button variant="outline">View All Content</Button>
@@ -296,95 +374,82 @@ export default function BulkUploadPage() {
           <div className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Upload Settings</CardTitle>
+                <CardTitle>Default Settings</CardTitle>
                 <CardDescription>
-                  Configure settings that apply to all files
+                  Set defaults for new items. You can customize each item individually below.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 {globalError && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Error</p>
-                        <p className="text-sm mt-1">{globalError}</p>
-                      </div>
+                      <p className="text-sm">{globalError}</p>
                     </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Content Type</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {contentTypes.map((type) => (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => {
-                          setContentType(type.id);
-                          setChapterId("");
-                        }}
-                        className={`p-3 rounded-lg border text-sm font-medium transition-colors ${
-                          contentType === type.id
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white text-gray-700 border-gray-200 hover:border-primary"
-                        }`}
-                      >
-                        {type.name}
-                      </button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {contentTypes.map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => {
+                        setDefaultContentType(type.id);
+                        setDefaultChapterId("");
+                      }}
+                      className={`p-2 rounded-lg border text-xs font-medium transition-colors ${
+                        defaultContentType === type.id
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-gray-700 border-gray-200 hover:border-primary"
+                      }`}
+                    >
+                      {type.name}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Subject *</label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Subject</label>
                     <select
-                      value={subjectId}
+                      value={defaultSubjectId}
                       onChange={(e) => {
-                        setSubjectId(e.target.value);
-                        setChapterId("");
+                        setDefaultSubjectId(e.target.value);
+                        setDefaultChapterId("");
                       }}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                      className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
                       disabled={loadingSubjects}
                     >
-                      <option value="">
-                        {loadingSubjects ? "Loading subjects..." : "Select Subject"}
-                      </option>
+                      <option value="">{loadingSubjects ? "Loading..." : "Select"}</option>
                       {subjects.map((sub) => (
                         <option key={sub.id} value={sub.id}>{sub.name}</option>
                       ))}
                     </select>
                   </div>
 
-                  {needsChapter ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Chapter *</label>
+                  {needsChapterForType(defaultContentType) ? (
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Chapter</label>
                       <select
-                        value={chapterId}
-                        onChange={(e) => setChapterId(e.target.value)}
-                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                        disabled={!subjectId || loadingChapters}
+                        value={defaultChapterId}
+                        onChange={(e) => setDefaultChapterId(e.target.value)}
+                        className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
+                        disabled={!defaultSubjectId || loadingDefaultChapters}
                       >
-                        <option value="">
-                          {loadingChapters ? "Loading chapters..." : 
-                           !subjectId ? "Select subject first" : "Select Chapter"}
-                        </option>
-                        {chapters.map((ch) => (
-                          <option key={ch.id} value={ch.id}>
-                            {ch.chapter_number}. {ch.title}
-                          </option>
+                        <option value="">{loadingDefaultChapters ? "Loading..." : "Select"}</option>
+                        {defaultChapters.map((ch) => (
+                          <option key={ch.id} value={ch.id}>{ch.chapter_number}. {ch.title}</option>
                         ))}
                       </select>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Year *</label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Year</label>
                       <select
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                        value={defaultYear}
+                        onChange={(e) => setDefaultYear(e.target.value)}
+                        className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm"
                       >
                         {Array.from({ length: 10 }, (_, i) => {
                           const y = new Date().getFullYear() - i;
@@ -393,39 +458,40 @@ export default function BulkUploadPage() {
                       </select>
                     </div>
                   )}
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Default View Count</label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Views</label>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
                       value={defaultFakeViews}
                       onChange={(e) => setDefaultFakeViews(e.target.value)}
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Default Download Count</label>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Downloads</label>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
                       value={defaultFakeDownloads}
                       onChange={(e) => setDefaultFakeDownloads(e.target.value)}
+                      className="h-9 text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">&nbsp;</label>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">&nbsp;</label>
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full"
-                      onClick={applyDefaultViewsToAll}
+                      size="sm"
+                      className="w-full h-9"
+                      onClick={applyDefaultsToAll}
                       disabled={files.length === 0}
                     >
-                      Apply to All Files
+                      Apply to All
                     </Button>
                   </div>
                 </div>
@@ -434,13 +500,26 @@ export default function BulkUploadPage() {
 
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Files ({files.length})</CardTitle>
-                <CardDescription>
-                  Add multiple PDF files to upload
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Items ({files.length})</CardTitle>
+                    <CardDescription>
+                      Add files or Supabase links with individual settings
+                    </CardDescription>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addLinkItem}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Link
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-primary transition-colors">
+                <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary transition-colors">
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx,.ppt,.pptx"
@@ -450,14 +529,14 @@ export default function BulkUploadPage() {
                     multiple
                   />
                   <label htmlFor="files-upload" className="cursor-pointer">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 font-medium">Click to select multiple files</p>
-                    <p className="text-sm text-gray-400 mt-1">PDF, DOC, DOCX, PPT, PPTX (max 10MB each)</p>
+                    <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600 font-medium">Click to select files</p>
+                    <p className="text-xs text-gray-400 mt-1">or use &quot;Add Link&quot; for Supabase URLs</p>
                   </label>
                 </div>
 
                 {files.length > 0 && (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {files.map((fileItem, index) => (
                       <div 
                         key={fileItem.id} 
@@ -476,48 +555,138 @@ export default function BulkUploadPage() {
                               <AlertCircle className="h-5 w-5 text-red-600" />
                             ) : fileItem.status === 'uploading' ? (
                               <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                            ) : fileItem.uploadMethod === 'link' ? (
+                              <LinkIcon className="h-5 w-5 text-gray-400" />
                             ) : (
                               <FileText className="h-5 w-5 text-gray-400" />
                             )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs text-gray-500">#{index + 1}</span>
-                              <span className="text-xs text-gray-400 truncate">{fileItem.file.name}</span>
-                              <span className="text-xs text-gray-400">
-                                ({(fileItem.file.size / (1024 * 1024)).toFixed(2)} MB)
-                              </span>
+                          <div className="flex-1 min-w-0 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium bg-gray-100 px-2 py-0.5 rounded">#{index + 1}</span>
+                              {fileItem.uploadMethod === 'file' && fileItem.file && (
+                                <>
+                                  <span className="text-xs text-gray-500 truncate">{fileItem.file.name}</span>
+                                  <span className="text-xs text-gray-400">
+                                    ({(fileItem.file.size / (1024 * 1024)).toFixed(2)} MB)
+                                  </span>
+                                  {fileItem.file.size > 4 * 1024 * 1024 && (
+                                    <span className="text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                      Large file - may fail
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                              {fileItem.uploadMethod === 'link' && (
+                                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Supabase Link</span>
+                              )}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+
+                            {fileItem.uploadMethod === 'link' && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <Input
+                                  type="url"
+                                  placeholder="Supabase storage URL"
+                                  value={fileItem.supabaseLink}
+                                  onChange={(e) => updateFile(fileItem.id, { supabaseLink: e.target.value })}
+                                  disabled={fileItem.status !== 'pending'}
+                                  className="text-sm h-8"
+                                />
+                                <Input
+                                  type="text"
+                                  placeholder="File name (e.g., Notes.pdf)"
+                                  value={fileItem.fileName}
+                                  onChange={(e) => updateFile(fileItem.id, { fileName: e.target.value })}
+                                  disabled={fileItem.status !== 'pending'}
+                                  className="text-sm h-8"
+                                />
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
                               <Input
                                 type="text"
                                 placeholder="Title"
                                 value={fileItem.title}
-                                onChange={(e) => updateFileTitle(fileItem.id, e.target.value)}
+                                onChange={(e) => updateFile(fileItem.id, { title: e.target.value })}
                                 disabled={fileItem.status !== 'pending'}
-                                className="text-sm"
+                                className="text-sm h-8 col-span-2"
                               />
-                              <Input
-                                type="number"
-                                min="0"
-                                placeholder="Views"
-                                value={fileItem.fakeViews}
-                                onChange={(e) => updateFileViews(fileItem.id, e.target.value)}
+                              <select
+                                value={fileItem.contentType}
+                                onChange={(e) => updateFile(fileItem.id, { contentType: e.target.value, chapterId: '' })}
                                 disabled={fileItem.status !== 'pending'}
-                                className="text-sm"
-                              />
-                              <Input
-                                type="number"
-                                min="0"
-                                placeholder="Downloads"
-                                value={fileItem.fakeDownloads}
-                                onChange={(e) => updateFileDownloads(fileItem.id, e.target.value)}
-                                disabled={fileItem.status !== 'pending'}
-                                className="text-sm"
-                              />
+                                className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                              >
+                                {contentTypes.map((type) => (
+                                  <option key={type.id} value={type.id}>{type.name}</option>
+                                ))}
+                              </select>
+                              <select
+                                value={fileItem.subjectId}
+                                onChange={(e) => {
+                                  updateFile(fileItem.id, { subjectId: e.target.value, chapterId: '' });
+                                  if (e.target.value) loadChaptersForFile(e.target.value);
+                                }}
+                                disabled={fileItem.status !== 'pending' || loadingSubjects}
+                                className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                              >
+                                <option value="">Subject</option>
+                                {subjects.map((sub) => (
+                                  <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                ))}
+                              </select>
+                              {needsChapterForType(fileItem.contentType) ? (
+                                <select
+                                  value={fileItem.chapterId}
+                                  onChange={(e) => updateFile(fileItem.id, { chapterId: e.target.value })}
+                                  disabled={fileItem.status !== 'pending' || !fileItem.subjectId || loadingChapters[fileItem.subjectId]}
+                                  className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                                >
+                                  <option value="">
+                                    {loadingChapters[fileItem.subjectId] ? "Loading..." : "Chapter"}
+                                  </option>
+                                  {(chaptersMap[fileItem.subjectId] || []).map((ch) => (
+                                    <option key={ch.id} value={ch.id}>{ch.chapter_number}. {ch.title}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <select
+                                  value={fileItem.year}
+                                  onChange={(e) => updateFile(fileItem.id, { year: e.target.value })}
+                                  disabled={fileItem.status !== 'pending'}
+                                  className="h-8 px-2 rounded-md border border-input bg-background text-xs"
+                                >
+                                  {Array.from({ length: 10 }, (_, i) => {
+                                    const y = new Date().getFullYear() - i;
+                                    return <option key={y} value={y}>{y}</option>;
+                                  })}
+                                </select>
+                              )}
+                              <div className="flex gap-1">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  placeholder="Views"
+                                  value={fileItem.fakeViews}
+                                  onChange={(e) => updateFile(fileItem.id, { fakeViews: e.target.value })}
+                                  disabled={fileItem.status !== 'pending'}
+                                  className="text-xs h-8 w-16"
+                                />
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  placeholder="DL"
+                                  value={fileItem.fakeDownloads}
+                                  onChange={(e) => updateFile(fileItem.id, { fakeDownloads: e.target.value })}
+                                  disabled={fileItem.status !== 'pending'}
+                                  className="text-xs h-8 w-16"
+                                />
+                              </div>
                             </div>
+                            
                             {fileItem.status === 'error' && fileItem.error && (
-                              <p className="text-xs text-red-600 mt-2">{fileItem.error}</p>
+                              <p className="text-xs text-red-600">{fileItem.error}</p>
                             )}
                           </div>
                           {fileItem.status === 'pending' && (
@@ -541,7 +710,7 @@ export default function BulkUploadPage() {
                       {uploading ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Uploading {pendingCount} files...
+                          Uploading...
                         </span>
                       ) : (
                         <>
