@@ -84,3 +84,10 @@ externalPort = 6000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SUPABASE_URL = "https://fprakypyfjsblzafrmut.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_TVi-jm1hXDyV4BE3A_r4CQ_kHEZnEmV"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY = "sb_publishable_TVi-jm1hXDyV4BE3A_r4CQ_kHEZnEmV"
