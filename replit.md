@@ -197,6 +197,10 @@ The Google Search Console verification code has been added:
 - Submit sitemap: `https://class10thpdf.vercel.app/sitemap.xml`
 
 ## Recent Changes
+- **Dec 2024**: Fixed PDF viewer with proper react-pdf CSS imports for better rendering
+- **Dec 2024**: Added filter dropdown to Notes tab allowing filtering by note type (Notes, Mind Maps, Summaries, MCQs, Important Questions)
+- **Dec 2024**: Improved responsive design across all subject pages, content tabs, and cards for mobile devices
+- **Dec 2024**: Enhanced tabs with mobile-friendly layout and improved spacing
 - **Dec 2024**: Added bulk upload feature at /admin/bulk-upload for uploading multiple files at once with individual titles and view/download counts
 - **Dec 2024**: Enhanced PDF viewer with book view mode (two-page spread), virtualized thumbnails sidebar, and keyboard shortcuts (B for book view, T for thumbnails, Home/End for first/last page)
 - **Dec 2024**: Improved logo handling with graceful fallback to default GraduationCap icon when custom logo unavailable

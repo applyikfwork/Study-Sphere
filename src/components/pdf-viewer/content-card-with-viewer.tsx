@@ -42,46 +42,46 @@ export function NoteCardWithViewer({
   return (
     <>
       <Card className="card-hover border-0 shadow-lg">
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
-            <div className={`w-12 h-12 rounded-lg ${colors.light} flex items-center justify-center`}>
-              <Icon className={`h-6 w-6 ${colors.text}`} />
+        <CardHeader className="pb-2 p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
+              <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${colors.text}`} />
             </div>
-            <Badge variant="secondary">{noteTypeLabel}</Badge>
+            <Badge variant="secondary" className="text-xs">{noteTypeLabel}</Badge>
           </div>
-          <CardTitle className="text-lg mt-4">{title}</CardTitle>
+          <CardTitle className="text-base sm:text-lg mt-3 sm:mt-4 line-clamp-2">{title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
             {views !== undefined && (
               <div className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>{views} views</span>
               </div>
             )}
             {fileName && (
-              <span className="truncate">{fileName}</span>
+              <span className="truncate max-w-[150px] text-xs">{fileName}</span>
             )}
           </div>
           {fileUrl ? (
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 text-sm"
                 variant="outline"
                 onClick={() => setIsViewerOpen(true)}
               >
-                <FileText className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 View PDF
               </Button>
               <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button className="w-full gap-2">
+                <Button className="w-full gap-2 text-sm">
                   <Download className="h-4 w-4" />
                   Download
                 </Button>
               </a>
             </div>
           ) : (
-            <Button className="w-full gap-2" disabled>
+            <Button className="w-full gap-2 text-sm" disabled>
               <ExternalLink className="h-4 w-4" />
               Coming Soon
             </Button>
@@ -129,54 +129,54 @@ export function SamplePaperCardWithViewer({
   return (
     <>
       <Card className="card-hover border-0 shadow-lg">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className={`w-12 h-12 rounded-lg ${colors.light} flex items-center justify-center`}>
-              <FileText className={`h-6 w-6 ${colors.text}`} />
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-start justify-between gap-2">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
+              <FileText className={`h-5 w-5 sm:h-6 sm:w-6 ${colors.text}`} />
             </div>
             <Badge>{year}</Badge>
           </div>
-          <CardTitle className="text-lg mt-4">{title}</CardTitle>
+          <CardTitle className="text-base sm:text-lg mt-3 sm:mt-4 line-clamp-2">{title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 mb-4">
-            {subject} sample paper with complete solutions and marking scheme.
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+            {subject} sample paper with solutions.
           </p>
           <div className="flex flex-col gap-2">
             {fileUrl ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
-                  className="flex-1 gap-2"
+                  className="flex-1 gap-2 text-sm"
                   variant="outline"
                   onClick={() => setIsViewerOpen(true)}
                 >
-                  <FileText className="h-4 w-4" />
-                  View
+                  <Eye className="h-4 w-4" />
+                  View PDF
                 </Button>
                 <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button className="w-full gap-2" variant="outline">
+                  <Button className="w-full gap-2 text-sm" variant="outline">
                     <Download className="h-4 w-4" />
                     Download
                   </Button>
                 </a>
               </div>
             ) : (
-              <Button className="w-full gap-2" variant="outline" disabled>
+              <Button className="w-full gap-2 text-sm" variant="outline" disabled>
                 <ExternalLink className="h-4 w-4" />
                 Coming Soon
               </Button>
             )}
             {solutionUrl && (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
-                  className="flex-1 gap-2"
+                  className="flex-1 gap-2 text-sm"
                   onClick={() => setIsSolutionViewerOpen(true)}
                 >
                   <Eye className="h-4 w-4" />
-                  View Solutions
+                  Solutions
                 </Button>
                 <a href={solutionUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button className="w-full gap-2">
+                  <Button className="w-full gap-2 text-sm">
                     <Download className="h-4 w-4" />
                     Download
                   </Button>
@@ -233,38 +233,38 @@ export function PyqCardWithViewer({
   return (
     <>
       <Card className="card-hover border-0 shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 rounded-lg ${colors.light} flex items-center justify-center`}>
-              <span className={`font-bold text-lg ${colors.text}`}>{year.toString().slice(-2)}</span>
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
+              <span className={`font-bold text-base sm:text-lg ${colors.text}`}>{year.toString().slice(-2)}</span>
             </div>
             <Badge variant="outline">{year}</Badge>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-2">
+          <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg line-clamp-2">
             {title}
           </h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
             CBSE Class 10 {subject} {year}
           </p>
           {fileUrl ? (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 text-sm"
                 variant="outline"
                 onClick={() => setIsViewerOpen(true)}
               >
-                <FileText className="h-4 w-4" />
-                View
+                <Eye className="h-4 w-4" />
+                View PDF
               </Button>
               <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button className="w-full gap-2" variant="outline">
+                <Button className="w-full gap-2 text-sm" variant="outline">
                   <Download className="h-4 w-4" />
                   Download
                 </Button>
               </a>
             </div>
           ) : (
-            <Button className="w-full gap-2" variant="outline" disabled>
+            <Button className="w-full gap-2 text-sm" variant="outline" disabled>
               <ExternalLink className="h-4 w-4" />
               Coming Soon
             </Button>
