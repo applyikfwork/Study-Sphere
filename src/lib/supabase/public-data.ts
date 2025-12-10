@@ -410,3 +410,137 @@ export async function incrementViews(tableName: string, id: string) {
     console.error('Error incrementing views:', err)
   }
 }
+
+export async function getSamplePapersBySubject(subjectSlug: string): Promise<SamplePaper[]> {
+  try {
+    const supabase = await createClientSafe()
+    if (!supabase) return []
+    
+    const { data: subject } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('slug', subjectSlug)
+      .single()
+    
+    if (!subject) return []
+    
+    const { data, error } = await supabase
+      .from('sample_papers')
+      .select(`
+        id,
+        subject_id,
+        title,
+        year,
+        set_number,
+        file_url,
+        file_name,
+        file_size,
+        solution_url,
+        views,
+        is_published,
+        created_at,
+        subjects (
+          name,
+          slug
+        )
+      `)
+      .eq('subject_id', subject.id)
+      .eq('is_published', true)
+      .order('year', { ascending: false })
+    
+    if (error) {
+      console.error('Error fetching sample papers by subject:', error)
+      return []
+    }
+    
+    return (data as unknown as SamplePaper[]) || []
+  } catch (err) {
+    console.error('Error in getSamplePapersBySubject:', err)
+    return []
+  }
+}
+
+export async function getPYQsBySubject(subjectSlug: string): Promise<PYQ[]> {
+  try {
+    const supabase = await createClientSafe()
+    if (!supabase) return []
+    
+    const { data: subject } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('slug', subjectSlug)
+      .single()
+    
+    if (!subject) return []
+    
+    const { data, error } = await supabase
+      .from('pyqs')
+      .select(`
+        id,
+        subject_id,
+        title,
+        year,
+        file_url,
+        file_name,
+        file_size,
+        solution_url,
+        views,
+        is_published,
+        created_at,
+        subjects (
+          name,
+          slug
+        )
+      `)
+      .eq('subject_id', subject.id)
+      .eq('is_published', true)
+      .order('year', { ascending: false })
+    
+    if (error) {
+      console.error('Error fetching PYQs by subject:', error)
+      return []
+    }
+    
+    return (data as unknown as PYQ[]) || []
+  } catch (err) {
+    console.error('Error in getPYQsBySubject:', err)
+    return []
+  }
+}
+
+export async function getAllSubjectsWithContent() {
+  try {
+    const supabase = await createClientSafe()
+    if (!supabase) return []
+    
+    const { data: subjects, error } = await supabase
+      .from('subjects')
+      .select('*')
+      .order('order_index')
+    
+    if (error || !subjects) return []
+    
+    const subjectsWithContent = await Promise.all(
+      subjects.map(async (subject) => {
+        const [chaptersData, notesData, samplePapersData, pyqsData] = await Promise.all([
+          supabase.from('chapters').select('id').eq('subject_id', subject.id),
+          supabase.from('notes').select('id').eq('is_published', true),
+          supabase.from('sample_papers').select('id').eq('subject_id', subject.id).eq('is_published', true),
+          supabase.from('pyqs').select('id').eq('subject_id', subject.id).eq('is_published', true)
+        ])
+        
+        return {
+          ...subject,
+          chaptersCount: chaptersData.data?.length || 0,
+          samplePapersCount: samplePapersData.data?.length || 0,
+          pyqsCount: pyqsData.data?.length || 0
+        }
+      })
+    )
+    
+    return subjectsWithContent
+  } catch (err) {
+    console.error('Error in getAllSubjectsWithContent:', err)
+    return []
+  }
+}
