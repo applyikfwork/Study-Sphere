@@ -67,7 +67,7 @@ export default function BulkUploadPage() {
     { id: "pyq", name: "PYQ", needsChapter: false },
   ];
 
-  const needsChapterForType = (type: string) => contentTypes.find(t => t.id === type)?.needsChapter ?? true;
+  const needsChapterForType = useCallback((type: string) => contentTypes.find(t => t.id === type)?.needsChapter ?? true, []);
 
   useEffect(() => {
     async function loadSubjects() {
