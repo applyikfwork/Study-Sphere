@@ -2,6 +2,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from "react"
 import { Document, Page, pdfjs } from "react-pdf"
+import "react-pdf/dist/Page/AnnotationLayer.css"
+import "react-pdf/dist/Page/TextLayer.css"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +30,10 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+if (typeof window !== "undefined") {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+}
 
 interface PdfViewerDialogProps {
   isOpen: boolean
@@ -57,7 +63,6 @@ export function PdfViewerDialog({
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(0)
-  const [workerReady, setWorkerReady] = useState<boolean>(false)
   const [viewMode, setViewMode] = useState<ViewMode>("single")
   const [showThumbnails, setShowThumbnails] = useState<boolean>(false)
   const [visibleThumbnails, setVisibleThumbnails] = useState<number[]>([])
@@ -74,13 +79,6 @@ export function PdfViewerDialog({
   useEffect(() => {
     pageNumberRef.current = pageNumber
   }, [pageNumber])
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`
-    }
-    setWorkerReady(true)
-  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -326,10 +324,6 @@ export function PdfViewerDialog({
   useEffect(() => {
     scrollToCurrentPage()
   }, [pageNumber, scrollToCurrentPage])
-
-  if (!workerReady) {
-    return null
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
