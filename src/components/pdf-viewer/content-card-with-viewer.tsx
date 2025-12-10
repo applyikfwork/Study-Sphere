@@ -1,11 +1,16 @@
 "use client"
 
 import React, { useState } from "react"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Download, Eye, FileText, ExternalLink } from "lucide-react"
-import { PdfViewerDialog } from "./pdf-viewer-dialog"
+
+const PdfViewerDialog = dynamic(
+  () => import("./pdf-viewer-dialog").then((mod) => mod.PdfViewerDialog),
+  { ssr: false }
+)
 
 interface NoteCardWithViewerProps {
   id: string
