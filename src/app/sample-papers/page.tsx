@@ -158,7 +158,7 @@ export default async function SamplePapersPage() {
             </Link>
           </div>
         ) : (
-          <SamplePapersClient groupedPapers={groupedPapers} getSubjectColor={getSubjectColor} />
+          <SamplePapersClient groupedPapers={groupedPapers} />
         )}
       </div>
     </div>
