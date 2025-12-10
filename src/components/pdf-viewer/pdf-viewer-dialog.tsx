@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -17,8 +16,10 @@ import {
   X,
   Loader2,
   FileText,
-  RotateCcw,
-  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
+  Printer,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -29,15 +30,14 @@ interface PdfViewerDialogProps {
   title?: string
 }
 
-function getProxiedUrl(url: string): string {
-  if (!url) return url
-  if (url.startsWith('/api/')) return url
-  return `/api/pdf-proxy?url=${encodeURIComponent(url)}`
+function getGoogleDocsViewerUrl(url: string): string {
+  const fullUrl = url.startsWith('http') ? url : `${typeof window !== 'undefined' ? window.location.origin : ''}${url}`
+  return `https://docs.google.com/gview?url=${encodeURIComponent(fullUrl)}&embedded=true`
 }
 
-function getGoogleViewerUrl(url: string): string {
-  const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`
-  return `https://docs.google.com/viewer?url=${encodeURIComponent(fullUrl)}&embedded=true`
+function getMicrosoftViewerUrl(url: string): string {
+  const fullUrl = url.startsWith('http') ? url : `${typeof window !== 'undefined' ? window.location.origin : ''}${url}`
+  return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fullUrl)}`
 }
 
 export function PdfViewerDialog({
@@ -46,18 +46,34 @@ export function PdfViewerDialog({
   pdfUrl,
   title = "PDF Viewer",
 }: PdfViewerDialogProps) {
-  const [scale, setScale] = useState<number>(100)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
-  const [viewerType, setViewerType] = useState<"native" | "google">("native")
+  const [loadError, setLoadError] = useState<boolean>(false)
+  const [viewerIndex, setViewerIndex] = useState<number>(0)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const viewers = [
+    { name: "Google Docs", getUrl: getGoogleDocsViewerUrl },
+    { name: "Microsoft", getUrl: getMicrosoftViewerUrl },
+    { name: "Direct", getUrl: (url: string) => url },
+  ]
 
   useEffect(() => {
     if (isOpen) {
-      setScale(100)
       setIsLoading(true)
-      setError(null)
-      setViewerType("native")
+      setLoadError(false)
+      setViewerIndex(0)
+      
+      loadTimeoutRef.current = setTimeout(() => {
+        setIsLoading(false)
+      }, 3000)
+    }
+    
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current)
+      }
     }
   }, [isOpen, pdfUrl])
 
@@ -65,25 +81,8 @@ export function PdfViewerDialog({
     if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case "Escape":
-          if (isFullscreen) {
-            setIsFullscreen(false)
-          }
-          break
-        case "+":
-        case "=":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault()
-            setScale((prev) => Math.min(prev + 25, 200))
-          }
-          break
-        case "-":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault()
-            setScale((prev) => Math.max(prev - 25, 50))
-          }
-          break
+      if (e.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false)
       }
     }
 
@@ -92,176 +91,152 @@ export function PdfViewerDialog({
   }, [isOpen, isFullscreen])
 
   const handleIframeLoad = useCallback(() => {
-    setIsLoading(false)
-  }, [])
-
-  const handleIframeError = useCallback(() => {
-    setIsLoading(false)
-    if (viewerType === "native") {
-      setViewerType("google")
-      setIsLoading(true)
-    } else {
-      setError("Failed to load PDF. Please try downloading the file.")
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current)
     }
-  }, [viewerType])
-
-  const zoomIn = useCallback(() => {
-    setScale((prev) => Math.min(prev + 25, 200))
+    setIsLoading(false)
+    setLoadError(false)
   }, [])
 
-  const zoomOut = useCallback(() => {
-    setScale((prev) => Math.max(prev - 25, 50))
-  }, [])
-
-  const resetZoom = useCallback(() => {
-    setScale(100)
-  }, [])
+  const handleRetry = useCallback(() => {
+    const nextIndex = (viewerIndex + 1) % viewers.length
+    setViewerIndex(nextIndex)
+    setIsLoading(true)
+    setLoadError(false)
+    
+    loadTimeoutRef.current = setTimeout(() => {
+      setIsLoading(false)
+    }, 3000)
+  }, [viewerIndex, viewers.length])
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen((prev) => !prev)
   }, [])
 
   const handleDownload = useCallback(() => {
-    window.open(pdfUrl, "_blank")
-  }, [pdfUrl])
+    const link = document.createElement('a')
+    link.href = pdfUrl
+    link.target = '_blank'
+    link.download = title.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }, [pdfUrl, title])
 
-  const handleOpenInNewTab = useCallback(() => {
-    const url = getProxiedUrl(pdfUrl)
-    window.open(url, "_blank")
-  }, [pdfUrl])
-
-  const switchToGoogleViewer = useCallback(() => {
-    setViewerType("google")
-    setIsLoading(true)
-    setError(null)
-  }, [])
-
-  const getViewerUrl = useCallback(() => {
-    if (viewerType === "google") {
-      return getGoogleViewerUrl(pdfUrl)
+  const handlePrint = useCallback(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.print()
+    } else {
+      window.open(pdfUrl, '_blank')
     }
-    return getProxiedUrl(pdfUrl)
-  }, [pdfUrl, viewerType])
+  }, [pdfUrl])
+
+  const currentViewerUrl = viewers[viewerIndex].getUrl(pdfUrl)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         className={cn(
-          "flex flex-col p-0 gap-0 overflow-hidden",
+          "flex flex-col p-0 gap-0 overflow-hidden border-0 shadow-2xl",
           isFullscreen
-            ? "fixed inset-0 max-w-none w-screen h-screen rounded-none translate-x-0 translate-y-0 left-0 top-0"
-            : "max-w-[95vw] w-full md:max-w-5xl lg:max-w-6xl h-[90vh] md:h-[85vh]"
+            ? "fixed inset-0 max-w-none w-screen h-screen rounded-none translate-x-0 translate-y-0 left-0 top-0 z-[100]"
+            : "max-w-[95vw] w-full md:max-w-6xl lg:max-w-7xl h-[95vh] md:h-[90vh] rounded-xl"
         )}
+        aria-describedby={undefined}
       >
-        <DialogHeader className="flex-shrink-0 px-4 py-3 border-b bg-gray-50">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3 min-w-0">
-              <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-              <DialogTitle className="text-sm md:text-lg font-semibold truncate">
-                {title}
-              </DialogTitle>
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+              <FileText className="h-4 w-4" />
             </div>
-            
-            <div className="flex items-center gap-1">
-              <div className="hidden sm:flex items-center gap-1 bg-white rounded-lg border px-2 py-1 mr-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={zoomOut}
-                  disabled={scale <= 50}
-                  title="Zoom out (-)"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <button
-                  className="px-2 text-sm font-medium hover:bg-gray-100 rounded min-w-[50px]"
-                  onClick={resetZoom}
-                  title="Reset zoom"
-                >
-                  {scale}%
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={zoomIn}
-                  disabled={scale >= 200}
-                  title="Zoom in (+)"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4" />
-                ) : (
-                  <Maximize2 className="h-4 w-4" />
-                )}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleOpenInNewTab}
-                title="Open in new tab"
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleDownload}
-                title="Download PDF"
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={onClose}
-                title="Close"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <h2 className="text-sm md:text-base font-medium truncate max-w-[200px] md:max-w-[400px]">
+              {title}
+            </h2>
           </div>
-        </DialogHeader>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+              onClick={handlePrint}
+              title="Print"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
 
-        <div className="flex-1 overflow-hidden bg-gray-200 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+              onClick={handleDownload}
+              title="Download PDF"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+
+            <div className="w-px h-5 bg-white/20 mx-1" />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/10"
+              onClick={onClose}
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 relative bg-gray-100">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-gray-600">Loading PDF...</p>
+            <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full border-4 border-gray-200"></div>
+                  <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-700 font-medium">Loading PDF...</p>
+                  <p className="text-sm text-gray-500 mt-1">Please wait a moment</p>
+                </div>
               </div>
             </div>
           )}
 
-          {error ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center p-6 max-w-md">
-                <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-600 mb-4">{error}</p>
-                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                  {viewerType === "native" && (
-                    <Button onClick={switchToGoogleViewer} variant="outline" className="gap-2">
-                      <RotateCcw className="h-4 w-4" />
-                      Try Alternative Viewer
-                    </Button>
-                  )}
+          {loadError ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white">
+              <div className="text-center p-8 max-w-md">
+                <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+                  <FileText className="h-10 w-10 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Unable to load PDF
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  The PDF couldn't be displayed. Try downloading it instead.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={handleRetry} variant="outline" className="gap-2">
+                    <RotateCw className="h-4 w-4" />
+                    Try Again
+                  </Button>
                   <Button onClick={handleDownload} className="gap-2">
                     <Download className="h-4 w-4" />
                     Download PDF
@@ -270,67 +245,16 @@ export function PdfViewerDialog({
               </div>
             </div>
           ) : (
-            <div 
-              className="w-full h-full overflow-auto"
-              style={{
-                transform: `scale(${scale / 100})`,
-                transformOrigin: 'top left',
-                width: `${10000 / scale}%`,
-                height: `${10000 / scale}%`,
-              }}
-            >
-              <iframe
-                src={getViewerUrl()}
-                className="w-full h-full border-0"
-                onLoad={handleIframeLoad}
-                onError={handleIframeError}
-                title={title}
-                sandbox="allow-same-origin allow-scripts allow-forms"
-              />
-            </div>
+            <iframe
+              ref={iframeRef}
+              src={currentViewerUrl}
+              className="w-full h-full border-0"
+              onLoad={handleIframeLoad}
+              title={title}
+              allow="autoplay"
+              style={{ background: '#f5f5f5' }}
+            />
           )}
-        </div>
-
-        <div className="flex-shrink-0 px-4 py-2 border-t bg-gray-50">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex sm:hidden items-center gap-1 bg-white rounded-lg border px-1 py-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={zoomOut}
-                disabled={scale <= 50}
-              >
-                <ZoomOut className="h-3 w-3" />
-              </Button>
-              <span className="text-xs font-medium px-1 min-w-[40px] text-center">{scale}%</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={zoomIn}
-                disabled={scale >= 200}
-              >
-                <ZoomIn className="h-3 w-3" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-gray-500">
-                {viewerType === "google" ? "Using Google Docs Viewer" : "Native PDF Viewer"}
-              </span>
-              {viewerType === "native" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={switchToGoogleViewer}
-                  className="text-xs h-7"
-                >
-                  Switch Viewer
-                </Button>
-              )}
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
