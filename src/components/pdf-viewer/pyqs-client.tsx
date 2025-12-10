@@ -16,14 +16,23 @@ interface Pyq {
 
 interface PyqsClientProps {
   groupedPYQs: Record<string, Pyq[]>
-  getSubjectColor: (subject: string) => {
-    bg: string
-    text: string
-    light: string
-  }
 }
 
-export function PyqsClient({ groupedPYQs, getSubjectColor }: PyqsClientProps) {
+const subjectColors: Record<string, { bg: string; text: string; light: string }> = {
+  Science: { bg: "bg-green-500", text: "text-green-600", light: "bg-green-50" },
+  Maths: { bg: "bg-blue-500", text: "text-blue-600", light: "bg-blue-50" },
+  Mathematics: { bg: "bg-blue-500", text: "text-blue-600", light: "bg-blue-50" },
+  SST: { bg: "bg-orange-500", text: "text-orange-600", light: "bg-orange-50" },
+  "Social Science": { bg: "bg-orange-500", text: "text-orange-600", light: "bg-orange-50" },
+  English: { bg: "bg-purple-500", text: "text-purple-600", light: "bg-purple-50" },
+  Hindi: { bg: "bg-pink-500", text: "text-pink-600", light: "bg-pink-50" },
+}
+
+function getSubjectColor(subjectName: string) {
+  return subjectColors[subjectName] || { bg: "bg-gray-500", text: "text-gray-600", light: "bg-gray-50" }
+}
+
+export function PyqsClient({ groupedPYQs }: PyqsClientProps) {
   return (
     <>
       {Object.entries(groupedPYQs).map(([subject, papers]) => {

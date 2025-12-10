@@ -160,7 +160,7 @@ export default async function PYQsPage() {
             </Link>
           </div>
         ) : (
-          <PyqsClient groupedPYQs={groupedPYQs} getSubjectColor={getSubjectColor} />
+          <PyqsClient groupedPYQs={groupedPYQs} />
         )}
       </div>
     </div>
