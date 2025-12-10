@@ -8,16 +8,11 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import {
-  ZoomIn,
-  ZoomOut,
   Maximize2,
   Minimize2,
   Download,
   X,
-  Loader2,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   RotateCw,
   Printer,
 } from "lucide-react"
@@ -230,7 +225,7 @@ export function PdfViewerDialog({
                   Unable to load PDF
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  The PDF couldn't be displayed. Try downloading it instead.
+                  The PDF could not be displayed. Try downloading it instead.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button onClick={handleRetry} variant="outline" className="gap-2">
