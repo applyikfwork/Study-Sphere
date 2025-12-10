@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
 
 interface SaveButtonProps {
   contentId: string
@@ -26,33 +25,43 @@ export function SaveButton({
   const [isSaved, setIsSaved] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const { toast } = useToast()
+  const [isChecking, setIsChecking] = useState(true)
 
-  useEffect(() => {
-    checkSavedStatus()
-  }, [contentId])
-
-  async function checkSavedStatus() {
+  const checkSavedStatus = useCallback(async () => {
     const supabase = createClient()
-    if (!supabase) return
+    if (!supabase) {
+      setIsChecking(false)
+      return
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       setIsLoggedIn(false)
+      setIsChecking(false)
       return
     }
 
     setIsLoggedIn(true)
 
-    const { data } = await supabase
-      .from('saved_items')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('content_id', contentId)
-      .single()
+    try {
+      const { data } = await supabase
+        .from('saved_items')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('content_id', contentId)
+        .eq('content_type', contentType)
+        .single()
 
-    setIsSaved(!!data)
-  }
+      setIsSaved(!!data)
+    } catch {
+      setIsSaved(false)
+    }
+    setIsChecking(false)
+  }, [contentId, contentType])
+
+  useEffect(() => {
+    checkSavedStatus()
+  }, [checkSavedStatus])
 
   async function handleSave() {
     const supabase = createClient()
@@ -60,11 +69,7 @@ export function SaveButton({
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to save items",
-        variant: "destructive"
-      })
+      window.location.href = '/login'
       return
     }
 
@@ -79,12 +84,7 @@ export function SaveButton({
           .eq('content_id', contentId)
 
         if (error) throw error
-
         setIsSaved(false)
-        toast({
-          title: "Removed",
-          description: "Item removed from your saved list"
-        })
       } else {
         const { error } = await supabase
           .from('saved_items')
@@ -101,23 +101,27 @@ export function SaveButton({
           }
           throw error
         }
-
         setIsSaved(true)
-        toast({
-          title: "Saved!",
-          description: "Item saved to your profile"
-        })
       }
     } catch (error) {
       console.error('Save error:', error)
-      toast({
-        title: "Error",
-        description: "Could not save item. Please try again.",
-        variant: "destructive"
-      })
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isChecking) {
+    return (
+      <Button 
+        size={size} 
+        variant={variant}
+        className={`gap-1.5 ${className}`}
+        disabled
+      >
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {showText && 'Save'}
+      </Button>
+    )
   }
 
   if (!isLoggedIn) {

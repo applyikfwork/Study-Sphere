@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Download, Eye, FileText, ExternalLink } from "lucide-react"
+import { SaveButton } from "@/components/save-button"
 
 const PdfViewerDialog = dynamic(
   () => import("./pdf-viewer-dialog").then((mod) => mod.PdfViewerDialog),
@@ -29,6 +30,7 @@ interface NoteCardWithViewerProps {
 }
 
 export function NoteCardWithViewer({
+  id,
   title,
   fileUrl,
   fileName,
@@ -47,7 +49,10 @@ export function NoteCardWithViewer({
             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
               <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${colors.text}`} />
             </div>
-            <Badge variant="secondary" className="text-xs">{noteTypeLabel}</Badge>
+            <div className="flex items-center gap-2">
+              <SaveButton contentId={id} contentType="note" size="icon" variant="ghost" showText={false} />
+              <Badge variant="secondary" className="text-xs">{noteTypeLabel}</Badge>
+            </div>
           </div>
           <CardTitle className="text-base sm:text-lg mt-3 sm:mt-4 line-clamp-2">{title}</CardTitle>
         </CardHeader>
@@ -116,6 +121,7 @@ interface SamplePaperCardWithViewerProps {
 }
 
 export function SamplePaperCardWithViewer({
+  id,
   title,
   fileUrl,
   solutionUrl,
@@ -134,7 +140,10 @@ export function SamplePaperCardWithViewer({
             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
               <FileText className={`h-5 w-5 sm:h-6 sm:w-6 ${colors.text}`} />
             </div>
-            <Badge>{year}</Badge>
+            <div className="flex items-center gap-2">
+              <SaveButton contentId={id} contentType="sample_paper" size="icon" variant="ghost" showText={false} />
+              <Badge>{year}</Badge>
+            </div>
           </div>
           <CardTitle className="text-base sm:text-lg mt-3 sm:mt-4 line-clamp-2">{title}</CardTitle>
         </CardHeader>
@@ -222,6 +231,7 @@ interface PyqCardWithViewerProps {
 }
 
 export function PyqCardWithViewer({
+  id,
   title,
   fileUrl,
   year,
@@ -238,7 +248,10 @@ export function PyqCardWithViewer({
             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${colors.light} flex items-center justify-center flex-shrink-0`}>
               <span className={`font-bold text-base sm:text-lg ${colors.text}`}>{year.toString().slice(-2)}</span>
             </div>
-            <Badge variant="outline">{year}</Badge>
+            <div className="flex items-center gap-2">
+              <SaveButton contentId={id} contentType="pyq" size="icon" variant="ghost" showText={false} />
+              <Badge variant="outline">{year}</Badge>
+            </div>
           </div>
           <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg line-clamp-2">
             {title}

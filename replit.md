@@ -81,14 +81,21 @@ src/
 5. **Sample Papers**: Year-wise organization with download links
 6. **PYQs**: Previous year questions by subject and year
 7. **Authentication**: Login, signup with Supabase Auth
-8. **User Profile**: Saved content and study progress
+8. **User Profile**: Saved content with tabs for Notes, Sample Papers, and PYQs - ability to view and remove saved items
 9. **PDF Viewer**: In-app PDF viewing with zoom, page navigation, fullscreen mode
+10. **Save Button**: Students can save any content (notes, sample papers, PYQs) for quick access from their profile
 
 ### Admin Panel Features
 1. **Real-time Dashboard**: Live statistics (students, notes, views, etc.)
 2. **Single Upload**: Upload individual files directly to Supabase Storage
 3. **Bulk Upload**: Upload multiple files at once with per-file titles and view/download counts
-4. **Content Management**: View, edit, delete, publish/unpublish content
+4. **Advanced Content Management**: View, edit, delete, publish/unpublish content with advanced filters:
+   - Filter by Subject
+   - Filter by Content Type (for Notes: Notes, Important Questions, MCQs, Summary, Mind Map)
+   - Filter by Year (for Sample Papers and PYQs)
+   - Filter by Status (Published/Draft)
+   - Sort options (Newest, Oldest, Most Viewed, Title A-Z/Z-A)
+   - Search functionality
 5. **User Management**: View users, change roles (admin/student), activate/deactivate
 6. **Site Settings**: Logo upload and site configuration
 
@@ -130,6 +137,7 @@ After running the SQL:
 - **notes**: Uploaded notes, MCQs, summaries, mind maps
 - **sample_papers**: Sample papers by year and subject
 - **pyqs**: Previous year questions by year and subject
+- **saved_items**: User saved content (notes, sample_papers, pyqs) - run supabase-saved-items.sql to create
 - **user_activity**: User activity tracking
 - **admin_activity**: Admin action logging
 - **site_settings**: Site configuration
@@ -228,6 +236,10 @@ The Google Search Console verification code has been added:
 - **Dec 2024**: Updated public pages to fetch from Supabase instead of mock data
 - **Dec 2024**: Added graceful handling for missing Supabase configuration
 - **Dec 2024**: Created public-data.ts for server-side data fetching
+- **Dec 2024**: Added Save Button feature - students can save notes, sample papers, and PYQs to their profile
+- **Dec 2024**: Enhanced Profile page with tabs for viewing all saved content (Notes, Sample Papers, PYQs) with remove functionality
+- **Dec 2024**: Added Advanced Filters to Admin Content Management - filter by subject, content type, year, status, and sort options
+- **Dec 2024**: Created saved_items database table SQL script (supabase-saved-items.sql)
 - **Dec 2024**: Initial project setup with full feature implementation
 
 ## Troubleshooting

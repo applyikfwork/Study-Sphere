@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { User, BookMarked, FileText, Settings, LogOut, Bookmark, Clock, Award, LayoutDashboard } from "lucide-react";
+import { User, BookMarked, FileText, Settings, LogOut, Bookmark, Clock, Award, LayoutDashboard, BookOpen, HelpCircle } from "lucide-react";
+import { SavedContentTabs } from "./saved-content-tabs";
 
 export const metadata = {
   title: "My Profile | Online School",
@@ -25,21 +26,95 @@ export default async function ProfilePage() {
     .eq('id', user.id)
     .single();
 
-  const { data: savedNotesData } = await supabase
-    .from('saved_notes')
-    .select(`
-      id,
-      notes (
-        id,
-        title,
-        chapters (
-          chapter_number,
-          subjects (name)
-        )
-      )
-    `)
+  const { data: savedItemsData } = await supabase
+    .from('saved_items')
+    .select('*')
     .eq('user_id', user.id)
-    .limit(5);
+    .order('created_at', { ascending: false });
+
+  const savedNotes: Array<{ id: string; contentId: string; title: string; subject: string; chapter: number; fileUrl: string | null }> = [];
+  const savedSamplePapers: Array<{ id: string; contentId: string; title: string; subject: string; year: number; fileUrl: string | null }> = [];
+  const savedPyqs: Array<{ id: string; contentId: string; title: string; subject: string; year: number; fileUrl: string | null }> = [];
+
+  if (savedItemsData) {
+    for (const item of savedItemsData) {
+      if (item.content_type === 'note') {
+        const { data: noteData } = await supabase
+          .from('notes')
+          .select(`
+            id,
+            title,
+            file_url,
+            chapters (
+              chapter_number,
+              subjects (name)
+            )
+          `)
+          .eq('id', item.content_id)
+          .single();
+        
+        if (noteData) {
+          const chapters = noteData.chapters as unknown as { chapter_number: number; subjects: { name: string } | null } | null;
+          savedNotes.push({
+            id: item.id,
+            contentId: item.content_id,
+            title: noteData.title || 'Untitled',
+            subject: chapters?.subjects?.name || 'Unknown',
+            chapter: chapters?.chapter_number || 1,
+            fileUrl: noteData.file_url
+          });
+        }
+      } else if (item.content_type === 'sample_paper') {
+        const { data: paperData } = await supabase
+          .from('sample_papers')
+          .select(`
+            id,
+            title,
+            file_url,
+            year,
+            subjects (name)
+          `)
+          .eq('id', item.content_id)
+          .single();
+        
+        if (paperData) {
+          const subjects = paperData.subjects as unknown as { name: string } | null;
+          savedSamplePapers.push({
+            id: item.id,
+            contentId: item.content_id,
+            title: paperData.title || 'Untitled',
+            subject: subjects?.name || 'Unknown',
+            year: paperData.year || 2024,
+            fileUrl: paperData.file_url
+          });
+        }
+      } else if (item.content_type === 'pyq') {
+        const { data: pyqData } = await supabase
+          .from('pyqs')
+          .select(`
+            id,
+            title,
+            file_url,
+            year,
+            subjects (name)
+          `)
+          .eq('id', item.content_id)
+          .single();
+        
+        if (pyqData) {
+          const subjects = pyqData.subjects as unknown as { name: string } | null;
+          savedPyqs.push({
+            id: item.id,
+            contentId: item.content_id,
+            title: pyqData.title || 'Untitled',
+            subject: subjects?.name || 'Unknown',
+            year: pyqData.year || 2024,
+            fileUrl: pyqData.file_url
+          });
+        }
+      }
+    }
+  }
 
   const { data: activityData } = await supabase
     .from('user_activity')
@@ -48,27 +123,12 @@ export default async function ProfilePage() {
     .order('created_at', { ascending: false })
     .limit(5);
 
-  const savedNotes = savedNotesData?.map((item: Record<string, unknown>) => ({
-    id: item.id as string,
-    title: (item.notes as Record<string, unknown>)?.title as string || 'Untitled',
-    subject: ((item.notes as Record<string, unknown>)?.chapters as Record<string, unknown>)?.subjects as string || 'Unknown',
-    chapter: ((item.notes as Record<string, unknown>)?.chapters as Record<string, unknown>)?.chapter_number as number || 1,
-  })) || [
-    { id: 1, title: "Chemical Reactions & Equations", subject: "Science", chapter: 1 },
-    { id: 2, title: "Real Numbers", subject: "Maths", chapter: 1 },
-    { id: 3, title: "Nationalism in India", subject: "SST", chapter: 2 },
-  ];
-
   const recentActivity = activityData?.map((item: Record<string, unknown>) => ({
     id: item.id as string,
     action: item.action as string,
     item: item.item_title as string,
     time: getTimeAgo(new Date(item.created_at as string)),
-  })) || [
-    { id: 1, action: "Viewed Notes", item: "Acids, Bases and Salts", time: "2 hours ago" },
-    { id: 2, action: "Downloaded", item: "Science Sample Paper 2025", time: "5 hours ago" },
-    { id: 3, action: "Completed Quiz", item: "Maths Chapter 1 MCQs", time: "1 day ago" },
-  ];
+  })) || [];
 
   function getTimeAgo(date: Date): string {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -83,6 +143,8 @@ export default async function ProfilePage() {
 
   const userName = profile?.full_name || user.user_metadata?.full_name || "Student";
   const userRole = profile?.role || 'student';
+
+  const totalSaved = savedNotes.length + savedSamplePapers.length + savedPyqs.length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,37 +177,28 @@ export default async function ProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bookmark className="h-5 w-5 text-primary" />
-                  Saved Notes
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Bookmark className="h-5 w-5 text-primary" />
+                    Saved Content
+                  </CardTitle>
+                  <Badge variant="outline">{totalSaved} items</Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                {savedNotes.length > 0 ? (
-                  <div className="space-y-3">
-                    {savedNotes.map((note) => (
-                      <Link key={note.id} href={`/class-10/${note.subject.toLowerCase()}/chapter-${note.chapter}`}>
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{note.title}</p>
-                              <p className="text-sm text-gray-500">{note.subject} - Chapter {note.chapter}</p>
-                            </div>
-                          </div>
-                          <Badge variant="outline">{note.subject}</Badge>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                {totalSaved > 0 ? (
+                  <SavedContentTabs 
+                    notes={savedNotes}
+                    samplePapers={savedSamplePapers}
+                    pyqs={savedPyqs}
+                  />
                 ) : (
                   <div className="text-center py-8">
                     <BookMarked className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No saved notes yet</p>
+                    <p className="text-gray-500">No saved content yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Save notes, sample papers, and PYQs to access them quickly</p>
                     <Link href="/notes">
-                      <Button variant="link" className="mt-2">Browse Notes</Button>
+                      <Button variant="link" className="mt-2">Browse Content</Button>
                     </Link>
                   </div>
                 )}
@@ -160,20 +213,26 @@ export default async function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-center gap-4">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-medium">{activity.action}:</span>{" "}
-                          {activity.item}
-                        </p>
-                        <p className="text-xs text-gray-500">{activity.time}</p>
+                {recentActivity.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-center gap-4">
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                        <div className="flex-1">
+                          <p className="text-sm">
+                            <span className="font-medium">{activity.action}:</span>{" "}
+                            {activity.item}
+                          </p>
+                          <p className="text-xs text-gray-500">{activity.time}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500 text-sm">No recent activity</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -183,37 +242,31 @@ export default async function ProfilePage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Award className="h-5 w-5 text-primary" />
-                  Your Progress
+                  Your Stats
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Notes Read</span>
-                      <span className="font-medium">12/50</span>
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <span className="text-sm font-medium">Saved Notes</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: "24%" }} />
-                    </div>
+                    <span className="text-lg font-bold text-blue-600">{savedNotes.length}</span>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Tests Completed</span>
-                      <span className="font-medium">5/20</span>
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-green-600" />
+                      <span className="text-sm font-medium">Sample Papers</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-green-500 rounded-full" style={{ width: "25%" }} />
-                    </div>
+                    <span className="text-lg font-bold text-green-600">{savedSamplePapers.length}</span>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>PYQs Solved</span>
-                      <span className="font-medium">3/10</span>
+                  <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5 text-orange-600" />
+                      <span className="text-sm font-medium">Saved PYQs</span>
                     </div>
-                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-500 rounded-full" style={{ width: "30%" }} />
-                    </div>
+                    <span className="text-lg font-bold text-orange-600">{savedPyqs.length}</span>
                   </div>
                 </div>
               </CardContent>
@@ -243,8 +296,14 @@ export default async function ProfilePage() {
                 </Link>
                 <Link href="/sample-papers">
                   <Button variant="outline" className="w-full justify-start gap-2">
-                    <FileText className="h-4 w-4" />
+                    <BookOpen className="h-4 w-4" />
                     Sample Papers
+                  </Button>
+                </Link>
+                <Link href="/pyqs">
+                  <Button variant="outline" className="w-full justify-start gap-2">
+                    <HelpCircle className="h-4 w-4" />
+                    Previous Year Questions
                   </Button>
                 </Link>
                 <form action="/api/auth/signout" method="POST">
