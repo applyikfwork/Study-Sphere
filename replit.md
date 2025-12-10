@@ -39,6 +39,7 @@ src/
 │   │   └── components/       # Admin client components
 │   └── api/
 │       ├── auth/signout/     # Sign out API route
+│       ├── pdf-proxy/        # PDF proxy to bypass CORS for Supabase storage
 │       └── settings/logo/    # Logo API route
 ├── components/
 │   ├── layout/
