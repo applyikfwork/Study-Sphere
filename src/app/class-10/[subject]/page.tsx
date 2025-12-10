@@ -179,8 +179,6 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
     subjectData.chapters.map((ch: { chapter_number: number; title: string }) => ({ chapter_number: ch.chapter_number, title: ch.title }))
   );
 
-  const totalResources = notes.length + samplePapers.length + pyqs.length;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <script

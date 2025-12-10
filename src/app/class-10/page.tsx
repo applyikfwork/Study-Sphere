@@ -1,8 +1,5 @@
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { Beaker, Calculator, Globe, BookOpen, Languages, ArrowRight, FileText, ClipboardList, History, GraduationCap } from "lucide-react";
+import { FileText, ClipboardList, History, GraduationCap } from "lucide-react";
 import { getAllSubjectsWithContent } from "@/lib/supabase/public-data";
-import { Badge } from "@/components/ui/badge";
 import { Metadata } from "next";
 import { LearningHub } from "@/components/learning-hub/learning-hub";
 

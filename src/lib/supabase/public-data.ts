@@ -522,9 +522,8 @@ export async function getAllSubjectsWithContent() {
     
     const subjectsWithContent = await Promise.all(
       subjects.map(async (subject) => {
-        const [chaptersData, notesData, samplePapersData, pyqsData] = await Promise.all([
+        const [chaptersData, samplePapersData, pyqsData] = await Promise.all([
           supabase.from('chapters').select('id').eq('subject_id', subject.id),
-          supabase.from('notes').select('id').eq('is_published', true),
           supabase.from('sample_papers').select('id').eq('subject_id', subject.id).eq('is_published', true),
           supabase.from('pyqs').select('id').eq('subject_id', subject.id).eq('is_published', true)
         ])

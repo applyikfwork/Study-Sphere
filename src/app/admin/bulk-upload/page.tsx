@@ -103,7 +103,7 @@ export default function BulkUploadPage() {
       }
     }
     loadDefaultChapters();
-  }, [defaultSubjectId, defaultContentType]);
+  }, [defaultSubjectId, defaultContentType, needsChapterForType]);
 
   const loadChaptersForFile = useCallback(async (subjectId: string) => {
     if (!subjectId || chaptersMap[subjectId]) return;
