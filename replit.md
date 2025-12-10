@@ -49,7 +49,14 @@ src/
 │   │   ├── features-section.tsx
 │   │   ├── subjects-section.tsx
 │   │   └── exam-section.tsx
-│   └── ui/                   # Shadcn UI components
+│   ├── learning-hub/
+│   │   └── learning-hub.tsx  # Centralized mind-map style navigation
+│   ├── subject/
+│   │   └── subject-content-tabs.tsx # Tabbed content for subjects
+│   ├── pdf-viewer/
+│   │   ├── pdf-viewer-dialog.tsx    # PDF viewer modal (dynamic import)
+│   │   └── content-card-with-viewer.tsx # Content card with PDF preview
+│   └── ui/                   # Shadcn UI components (tabs, etc.)
 ├── lib/
 │   ├── data.ts               # Static data reference (legacy)
 │   ├── utils.ts              # Utility functions
@@ -67,13 +74,14 @@ src/
 
 ### Student Features
 1. **Homepage**: Hero section, features showcase, subject cards
-2. **Subject Pages**: All 5 subjects with chapter listings from database
-3. **Chapter Detail**: Resources display with downloadable notes, important questions, MCQs
-4. **Sample Papers**: Year-wise organization with download links
-5. **PYQs**: Previous year questions by subject and year
-6. **Authentication**: Login, signup with Supabase Auth
-7. **User Profile**: Saved content and study progress
-8. **PDF Viewer**: In-app PDF viewing with zoom, page navigation, fullscreen mode
+2. **Subject Pages**: All 5 subjects with tabbed content (Chapters, Notes, Sample Papers, PYQs)
+3. **Learning Hub**: Centralized mind-map style navigation at /class-10
+4. **Chapter Detail**: Resources display with downloadable notes, important questions, MCQs
+5. **Sample Papers**: Year-wise organization with download links
+6. **PYQs**: Previous year questions by subject and year
+7. **Authentication**: Login, signup with Supabase Auth
+8. **User Profile**: Saved content and study progress
+9. **PDF Viewer**: In-app PDF viewing with zoom, page navigation, fullscreen mode
 
 ### Admin Panel Features
 1. **Real-time Dashboard**: Live statistics (students, notes, views, etc.)
