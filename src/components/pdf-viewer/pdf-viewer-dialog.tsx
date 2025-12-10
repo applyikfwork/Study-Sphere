@@ -36,6 +36,12 @@ interface PdfViewerDialogProps {
   title?: string
 }
 
+function getProxiedUrl(url: string): string {
+  if (!url) return url
+  if (url.startsWith('/api/')) return url
+  return `/api/pdf-proxy?url=${encodeURIComponent(url)}`
+}
+
 type ViewMode = "single" | "book"
 
 export function PdfViewerDialog({
@@ -449,7 +455,7 @@ export function PdfViewerDialog({
               className="hidden md:flex flex-col w-44 border-r bg-gray-100 overflow-y-auto"
             >
               <Document
-                file={pdfUrl}
+                file={getProxiedUrl(pdfUrl)}
                 loading={null}
                 error={null}
               >
@@ -524,7 +530,7 @@ export function PdfViewerDialog({
                 viewMode === "book" ? "items-start" : "items-start"
               )}>
                 <Document
-                  file={pdfUrl}
+                  file={getProxiedUrl(pdfUrl)}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={onDocumentLoadError}
                   loading={null}

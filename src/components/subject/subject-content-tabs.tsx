@@ -15,7 +15,9 @@ import {
   Download,
   Eye,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Brain,
+  CheckSquare
 } from "lucide-react"
 
 const PdfViewerDialog = dynamic(
@@ -149,19 +151,31 @@ export function SubjectContentTabs({
                             {chapter.description && (
                               <p className="text-sm text-gray-500 mb-2">{chapter.description}</p>
                             )}
-                            <div className="flex flex-wrap gap-3 mt-3">
-                              <div className="flex items-center gap-1 text-sm text-gray-500">
-                                <FileText className="h-4 w-4" />
-                                <span>Notes PDF</span>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                <FileText className="h-3 w-3" />
+                                <span>Notes</span>
                               </div>
-                              <div className="flex items-center gap-1 text-sm text-gray-500">
-                                <HelpCircle className="h-4 w-4" />
-                                <span>Important Questions</span>
+                              <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                <HelpCircle className="h-3 w-3" />
+                                <span>Important Qs</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                <CheckSquare className="h-3 w-3" />
+                                <span>MCQs</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                <Brain className="h-3 w-3" />
+                                <span>Mind Map</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                <BookOpen className="h-3 w-3" />
+                                <span>Summary</span>
                               </div>
                               {chapterNoteCount > 0 && (
-                                <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
-                                  <Download className="h-4 w-4" />
-                                  <span>{chapterNoteCount} Free Downloads</span>
+                                <div className="flex items-center gap-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">
+                                  <Download className="h-3 w-3" />
+                                  <span>{chapterNoteCount} Downloads</span>
                                 </div>
                               )}
                             </div>
